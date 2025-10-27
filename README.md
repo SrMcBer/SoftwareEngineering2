@@ -37,7 +37,7 @@ The initial scope considers only one clinic, with two roles:
 | Component | Status |
 |----------|--------|
 | Requirements | ✅ Completed - Pending Review (Workshop 1) |
-| User Stories | ✅ Completed - Pending Review(Workshop 1) |
-| Story Map | ✅ Completed - Pending Review(Workshop 1) |
+| User Stories | ✅ Completed - Pending Review (Workshop 1) |
+| Story Map | ✅ Completed - Pending Review (Workshop 1) |
 | Initial Prototype | ⏳ Not started |
 | System Implementation | ⏳ Planned |
