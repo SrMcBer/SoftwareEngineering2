@@ -31,6 +31,7 @@ The initial scope considers only one clinic, with two roles:
 | Workshop | Description | Link |
 |---------|-------------|------|
 | **Workshop 1** | Requirements, User Stories, and Story Mapping | 👉 `/Workshop-1/Workshop I - SEII.pdf` |
+| **Workshop 2** | Design Artifacts and System Modeling | 👉 `/Workshop-2/Workshop II - SEII.pdf` |
 
 ## ✅ Status
 
@@ -39,5 +40,8 @@ The initial scope considers only one clinic, with two roles:
 | Requirements | ✅ Completed - Pending Review (Workshop 1) |
 | User Stories | ✅ Completed - Pending Review (Workshop 1) |
 | Story Map | ✅ Completed - Pending Review (Workshop 1) |
+| Class Diagrams | ✅ Completed - Pending Review (Workshop 2) |
+| Database Diagrams | ✅ Completed - Pending Review (Workshop 2) |
+| UI Mookups | ✅ Completed - Pending Review (Workshop 2) |
 | Initial Prototype | ⏳ Not started |
 | System Implementation | ⏳ Planned |
