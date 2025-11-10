@@ -1,0 +1,46 @@
+@startuml
+title Register a New Patient Visit
+
+|Veterinarian|
+start
+:Patient presents for visit;
+
+:Search patient (name/microchip/owner);
+if (Patient found?) then (Yes)
+else (No)
+  :Create Owner (if needed);
+  :Create Patient;
+endif
+
+:Open patient profile;
+:Create "New Visit";
+
+:Enter visit details\n(reason, notes, diagnoses,\nprocedures, recommendations);
+:Capture vitals snapshot;
+
+fork
+  :Attach files (x-rays/videos/PDFs);
+  |VetTrack System|
+  :Store binary in Object Storage;\nSave attachment metadata;
+  |Veterinarian|
+fork again
+  :Add/Update medications;
+fork again
+  :Create reminder (follow-up);
+end fork
+
+if (Need an exam?) then (Yes)
+  :Select ExamTemplate (versioned);
+  :Enter results_json + exam vitals_json;
+  |VetTrack System|
+  :Validate results against template version;
+  |Veterinarian|
+  :Set exam status (draft/final);
+endif
+
+|VetTrack System|
+:Write audit log entries\n(visit, meds, attachments, exam);
+
+|Veterinarian|
+stop
+@enduml
