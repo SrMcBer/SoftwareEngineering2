@@ -2,11 +2,15 @@
 
 This is the authentication service for the VetTrack application.
 
-## Running the Application
+## Installation
 
-To run the application, ensure you have your Python virtual environment activated and the dependencies installed.
+1.  Create a virtual environment:
 
-1.  Activate your virtual environment:
+    ```bash
+    python3 -m venv .venv
+    ```
+
+2.  Activate your virtual environment:
 
     On macOS and Linux:
 
@@ -20,7 +24,17 @@ To run the application, ensure you have your Python virtual environment activate
     .venv\Scripts\activate
     ```
 
-2.  Run the application:
+3.  Install the dependencies:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+## Running the Application
+
+To run the application, ensure you have your Python virtual environment activated.
+
+1.  Run the application:
 
     ```bash
     uvicorn app.main:app --reload
