@@ -3,9 +3,9 @@ from uuid import UUID
 from pydantic import BaseModel, EmailStr, constr, field_validator
 
 class UserRegisterRequest(BaseModel):
-    name: constr(strip_whitespace=True, min_length=1)
+    name: constr(strip_whitespace=True, min_length=1) # pyright: ignore[reportInvalidTypeForm]
     email: EmailStr
-    password: constr(min_length=8, max_length=72)
+    password: constr(min_length=8, max_length=72) # pyright: ignore[reportInvalidTypeForm]
     
     @field_validator('password')
     @classmethod  
@@ -19,3 +19,18 @@ class UserRegisterResponse(BaseModel):
     name: str
     email: EmailStr
     message: str
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: constr(min_length=8, max_length=72) # pyright: ignore[reportInvalidTypeForm]
+
+
+class UserInfo(BaseModel):
+    name: str
+    email: EmailStr
+    role: str
+
+
+class LoginResponse(BaseModel):
+    session_token: str
+    user: UserInfo
