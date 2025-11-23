@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Header, Request
 from sqlalchemy.orm import Session
+from pydantic import EmailStr
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import logging
@@ -11,9 +12,14 @@ from .schemas import (
     LoginRequest,
     LoginResponse,
     UserInfo,
+    MessageResponse,
+    ChangePasswordRequest,
+    SessionInfo,
+    SessionsListResponse,
 )
 from .security import hash_password, verify_password
 from datetime import datetime, timedelta, timezone
+from uuid import UUID
 import hashlib
 import secrets
 
@@ -255,6 +261,68 @@ def login(
       user=user_info,
   )
 
+@app.post("/logout", response_model=MessageResponse)
+def logout(
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    db: Session = Depends(get_db),
+):
+  """
+  Logout the current session: revoke the session associated with the bearer token.
+  """
+  if not authorization:
+      raise HTTPException(
+          status_code=status.HTTP_401_UNAUTHORIZED,
+          detail="Missing Authorization header.",
+      )
+  
+  parts = authorization.split()
+  if len(parts) != 2 or parts[0].lower() != "bearer":
+      raise HTTPException(
+          status_code=status.HTTP_401_UNAUTHORIZED,
+          detail="Invalid Authorization header format. Expected 'Bearer <token>'.",
+      )
+
+  raw_token = parts[1].strip()
+  if not raw_token:
+      raise HTTPException(
+          status_code=status.HTTP_401_UNAUTHORIZED,
+          detail="Empty bearer token.",
+      )
+  
+  token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+  now = datetime.now(timezone.utc)
+
+  session = (
+      db.query(models.UserSession)
+      .filter(
+          models.UserSession.token_hash == token_hash,
+          models.UserSession.expires_at > now,
+          models.UserSession.revoked_at.is_(None),
+      )
+      .first()
+  )
+  
+  
+  if not session:
+      # token invalid / already revoked / expired
+      raise HTTPException(
+          status_code=status.HTTP_401_UNAUTHORIZED,
+          detail="Invalid or expired session token.",
+      )
+  
+  
+  session.revoked_at = now
+  try:
+      db.commit()
+  except Exception:
+      db.rollback()
+      raise HTTPException(
+          status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+          detail="An unexpected error occurred while logging out.",
+      )
+
+  return MessageResponse(message="Logged out successfully.")
+
 def get_current_user(
     authorization: str | None = Header(default=None, alias="Authorization"),
     db: Session = Depends(get_db),
@@ -411,3 +479,51 @@ def read_current_user(current_user: models.AppUser = Depends(get_current_user)):
           status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
           detail="An error occurred while retrieving user information.",
       )
+
+@app.post("/password/change", response_model=MessageResponse)
+def change_password(
+    payload: ChangePasswordRequest,
+    current_user: models.AppUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+  """
+  Change the password for the currently authenticated user.
+  Requires current_password and new_password.
+  After changing, all active sessions are revoked.
+  """
+  # 1. Verify current password
+  if not verify_password(payload.current_password, current_user.password_hash):
+      raise HTTPException(
+          status_code=status.HTTP_401_UNAUTHORIZED,
+          detail="Current password is incorrect.",
+      )
+
+  # 2. Hash new password
+  new_hash = hash_password(payload.new_password)
+  current_user.password_hash = new_hash
+
+  # 3. Revoke all active sessions for this user (including current)
+  now = datetime.now(timezone.utc)
+  (
+      db.query(models.UserSession)
+      .filter(
+          models.UserSession.user_id == current_user.id,
+          models.UserSession.revoked_at.is_(None),
+          models.UserSession.expires_at > now,
+      )
+      .update({"revoked_at": now}, synchronize_session=False)
+  )
+
+  try:
+      db.commit()
+  except Exception:
+      db.rollback()
+      raise HTTPException(
+          status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+          detail="An unexpected error occurred while changing the password.",
+      )
+
+  return MessageResponse(
+      message="Password updated successfully. Please log in again with your new password."
+  )
+
