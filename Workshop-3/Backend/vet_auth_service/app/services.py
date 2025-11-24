@@ -112,13 +112,26 @@ class AuthService:
         raw_token, token_hash = self.token_service.generate_session_token()
         expires_at = self.token_service.calculate_expiry()
         
+        # Sanitize IP address for INET type
+        sanitized_ip = None
+        if client_ip:
+            # Check if it's a valid IP address
+            import ipaddress
+            try:
+                ipaddress.ip_address(client_ip)
+                sanitized_ip = client_ip
+            except ValueError:
+                # Not a valid IP, set to None
+                logger.debug(f"Invalid IP address format: {client_ip}, storing as NULL")
+                sanitized_ip = None
+        
         # Create session
         self.session_repo.create(
             user_id=user.id,
             token_hash=token_hash,
             expires_at=expires_at,
             user_agent=client_type,
-            ip_address=client_ip,
+            ip_address=sanitized_ip,
         )
         
         # Update last login
