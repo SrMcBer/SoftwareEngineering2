@@ -13,8 +13,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID, INET, CITEXT
 from sqlalchemy.orm import relationship
-
-from .db import Base
+from .database import Base
 
 
 class AppUser(Base):
