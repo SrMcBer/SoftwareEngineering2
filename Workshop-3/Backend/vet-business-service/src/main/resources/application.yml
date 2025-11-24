@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/vettrack_db
+    username: vettrack_user
+    password: vettrack_password
+  jpa:
+    hibernate:
+      ddl-auto: none   # IMPORTANT: don't let Spring recreate your tables
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+
+server:
+  port: 8081
