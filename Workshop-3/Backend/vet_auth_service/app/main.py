@@ -1,7 +1,8 @@
 # ============================================================================
 # main.py - Application Entry Point
 # ============================================================================
-from fastapi import FastAPI
+from fastapi import FastAPI, logger
+from contextlib import asynccontextmanager
 import logging
 from .routes import router
 from .config import Config
@@ -11,28 +12,32 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+app_logger = logging.getLogger(__name__)
 
-# Create FastAPI app
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan context manager for startup and shutdown events.
+    Replaces the deprecated @app.on_event decorators.
+    """
+    # Startup
+    config = Config()
+    app_logger.info("Application starting...")
+    app_logger.info(f"Database URL configured: {bool(config.DATABASE_URL)}")
+    app_logger.info(f"Session expiry: {config.SESSION_EXPIRY_HOURS} hours")
+    
+    yield
+    
+    # Shutdown (if you need cleanup logic)
+    app_logger.info("Application shutting down...")
+
+# Create FastAPI app with lifespan
 app = FastAPI(
     title="VetTrack Auth Service",
     description="Authentication service with clean architecture",
     version="2.0.0",
+    lifespan=lifespan,
 )
 
 # Include routes
 app.include_router(router, tags=["auth"])
-
-# Optional: Add startup event to validate configuration
-@app.on_event("startup")
-def startup_event():
-    """Validate configuration on startup"""
-    config = Config()
-    logger = logging.getLogger(__name__)
-    logger.info("Application starting...")
-    logger.info(f"Database URL configured: {bool(config.DATABASE_URL)}")
-    logger.info(f"Session expiry: {config.SESSION_EXPIRY_HOURS} hours")
