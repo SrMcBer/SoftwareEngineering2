@@ -147,6 +147,7 @@ def logout(
 def get_me(current_user = Depends(get_current_user)):
     """Get current user information"""
     return UserInfo(
+        id=current_user.id,
         name=current_user.name,
         email=current_user.email,
         role=current_user.role,
