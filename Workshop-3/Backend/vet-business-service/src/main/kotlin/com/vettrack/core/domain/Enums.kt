@@ -1,8 +1,8 @@
 package com.vettrack.core.domain
 
 enum class UserRole {
-    VET,
-    ADMIN
+    vet,
+    admin
 }
 
 enum class ReminderStatus {

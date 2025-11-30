@@ -29,7 +29,7 @@ class User(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    var role: UserRole = UserRole.VET,
+    var role: UserRole = UserRole.vet,
 
     @Column(name = "password_hash", nullable = false)
     var passwordHash: String,

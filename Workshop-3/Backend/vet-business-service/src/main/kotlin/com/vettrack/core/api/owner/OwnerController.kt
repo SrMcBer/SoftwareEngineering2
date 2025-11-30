@@ -1,6 +1,6 @@
 package com.vettrack.core.api.owner
 
-import com.vettrack.core.domain.Owner
+import com.vettrack.core.auth.CurrentUserHolder
 import com.vettrack.core.service.OwnerService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
@@ -16,7 +16,9 @@ import java.util.UUID
 @RestController
 @RequestMapping("/owners")
 class OwnerController (
-    private val ownerService: OwnerService
+    private val ownerService: OwnerService,
+    private val currentUserHolder: CurrentUserHolder
+
 ) {
     /**
      * Create a new owner
@@ -27,17 +29,16 @@ class OwnerController (
     fun createOwner(
         @Valid @RequestBody request: CreateOwnerRequest,
         httpServletRequest: HttpServletRequest,
-        principal: Principal?
     ): ResponseEntity<OwnerResponse> {
-        val actorUserId = extractActorUserId(principal)
-        val actorIp = extractIp(httpServletRequest)
+
+        val currentUser = currentUserHolder.get()
 
         val owner = ownerService.createOwner(
             name = request.name,
             phone = request.phone,
             email = request.email,
-            actorUserId = actorUserId,
-            actorIp = actorIp
+            actorUserId = currentUser?.id,
+            actorIp = extractIp(httpServletRequest)
         )
 
         return ResponseEntity
@@ -68,9 +69,10 @@ class OwnerController (
         @PathVariable id: UUID,
         @Valid @RequestBody request: UpdateOwnerRequest,
         httpServletRequest: HttpServletRequest,
-        principal: Principal?
     ): OwnerResponse {
-        val actorUserId = extractActorUserId(principal)
+
+        val currentUser = currentUserHolder.get()
+
         val actorIp = extractIp(httpServletRequest)
 
         val updated = ownerService.updateOwner(
@@ -78,7 +80,7 @@ class OwnerController (
             name = request.name,
             phone = request.phone,
             email = request.email,
-            actorUserId = actorUserId,
+            actorUserId = currentUser?.id,
             actorIp = actorIp
         )
 
@@ -97,14 +99,14 @@ class OwnerController (
     fun deleteOwner(
         @PathVariable id: UUID,
         httpServletRequest: HttpServletRequest,
-        principal: Principal?
     ) {
-        val actorUserId = extractActorUserId(principal)
+        val currentUser = currentUserHolder.get()
+
         val actorIp = extractIp(httpServletRequest)
 
         ownerService.deleteOwner(
             id = id,
-            actorUserId = actorUserId,
+            actorUserId = currentUser?.id,
             actorIp = actorIp
         )
     }
