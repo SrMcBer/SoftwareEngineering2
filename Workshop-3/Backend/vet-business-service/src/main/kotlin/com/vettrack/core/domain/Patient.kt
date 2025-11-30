@@ -57,6 +57,31 @@ class Patient(
     @OneToMany(mappedBy = "patient", fetch = FetchType.LAZY)
     var attachments: MutableList<Attachment> = mutableListOf()
 ) {
-    // Example of aggregate-like behavior (matches CRC responsibilities)
     fun lastVisit(): Visit? = visits.maxByOrNull { it.dateTime }
+
+    /**
+     * Creates a shallow copy of the Patient object for auditing and tracking changes.
+     * * NOTE: This only copies the fields being audited/updated (the constructor parameters)
+     * and purposefully ignores the large collection fields (visits, medications, etc.)
+     * and the 'updatedAt' timestamp, as this copy represents the 'before' state.
+     */
+    fun shallowCopy(): Patient {
+        return Patient(
+            id = this.id,
+            owner = this.owner, // Copying the reference to the Owner
+            name = this.name,
+            species = this.species,
+            breed = this.breed,
+            sex = this.sex,
+            dob = this.dob,
+            color = this.color,
+            microchipId = this.microchipId,
+            allergies = this.allergies,
+            notes = this.notes,
+            createdAt = this.createdAt,
+            updatedAt = this.updatedAt // Copying the old updatedAt value
+            // We intentionally do not copy the lazy collections (visits, meds, etc.)
+            // as they are not needed for the audit diff snapshot.
+        )
+    }
 }

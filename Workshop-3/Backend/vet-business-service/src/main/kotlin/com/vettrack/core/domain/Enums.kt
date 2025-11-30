@@ -9,6 +9,7 @@ enum class ReminderStatus {
     PENDING,
     DONE,
     OVERDUE,
+    DISMISSED,
 }
 
 enum class ExamStatus {

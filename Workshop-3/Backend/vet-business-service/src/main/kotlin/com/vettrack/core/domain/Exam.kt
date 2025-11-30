@@ -61,4 +61,26 @@ class Exam(
         status = ExamStatus.FINAL
         updatedAt = OffsetDateTime.now()
     }
+    /**
+     * Creates a shallow copy of the Exam object for auditing and tracking changes.
+     * This captures the 'before' state of the mutable fields (JSONs, status, notes).
+     */
+    fun shallowCopy(): Exam {
+        return Exam(
+            id = this.id,
+            patient = this.patient,
+            visit = this.visit,
+            template = this.template,
+            templateVersion = this.templateVersion,
+            performedAt = this.performedAt,
+            performedBy = this.performedBy,
+            vitalsJson = this.vitalsJson,
+            resultsJson = this.resultsJson,
+            status = this.status,
+            notes = this.notes,
+            createdAt = this.createdAt,
+            updatedAt = this.updatedAt
+            // Note: Lazy collections (attachments) are intentionally not copied.
+        )
+    }
 }

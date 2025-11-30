@@ -43,6 +43,24 @@ class Reminder(
         updatedAt = OffsetDateTime.now()
     }
 
+    fun markDismissed() {
+        status = ReminderStatus.DISMISSED
+        updatedAt = OffsetDateTime.now()
+    }
+
     fun isOverdue(now: OffsetDateTime = OffsetDateTime.now()): Boolean =
         status == ReminderStatus.PENDING && dueAt.isBefore(now)
+
+    fun shallowCopy(): Reminder {
+        return Reminder(
+            id = this.id,
+            patient = this.patient,
+            title = this.title,
+            dueAt = this.dueAt,
+            status = this.status,
+            createdBy = this.createdBy,
+            createdAt = this.createdAt,
+            updatedAt = this.updatedAt
+        )
+    }
 }

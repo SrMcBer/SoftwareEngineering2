@@ -1,5 +1,6 @@
 package com.vettrack.core.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.vettrack.core.domain.ExamTemplate
 import com.vettrack.core.domain.User
 import com.vettrack.core.repository.ExamTemplateRepository
@@ -11,7 +12,8 @@ import java.util.UUID
 @Service
 class ExamTemplateService(
     private val examTemplateRepository: ExamTemplateRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val objectMapper: ObjectMapper
 ) {
 
     fun createTemplate(
@@ -21,6 +23,8 @@ class ExamTemplateService(
         createdByUserId: UUID?,
         version: Int = 1
     ): ExamTemplate {
+        validateFieldSchema(fieldsJson)
+
         val createdBy: User? = createdByUserId?.let { uid ->
             userRepository.findById(uid).orElseThrow {
                 NoSuchElementException("User $uid not found")
@@ -53,4 +57,18 @@ class ExamTemplateService(
 
     fun getActiveTemplates(): List<ExamTemplate> =
         examTemplateRepository.findByIsActiveTrue()
+
+    private fun validateFieldSchema(fieldsJson: String) {
+        try {
+            objectMapper.readTree(fieldsJson)
+        } catch (e: Exception) {
+            throw IllegalArgumentException("Invalid fieldsJson schema format: ${e.message}")
+        }
+    }
+
+    // Add getById back in for ExamService collaboration
+    fun getById(templateId: UUID): ExamTemplate =
+        examTemplateRepository.findById(templateId).orElseThrow {
+            NoSuchElementException("Template $templateId not found")
+        }
 }
