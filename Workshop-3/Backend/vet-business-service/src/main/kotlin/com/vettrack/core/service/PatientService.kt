@@ -153,6 +153,8 @@ class PatientService(
     fun findByMicrochip(microchipId: String): Patient? =
         patientRepository.findByMicrochipId(microchipId)
 
+    fun listAll(): List<Patient> =
+         patientRepository.findAll()
     // ------------------- Aggregation/Coordination Responsibility -------------------
 
     /**

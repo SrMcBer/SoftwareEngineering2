@@ -133,6 +133,8 @@ class VisitService(
     fun listBetween(start: OffsetDateTime, end: OffsetDateTime): List<Visit> =
         visitRepository.findByDateTimeBetween(start, end)
 
+    fun listAll(): List<Visit> = visitRepository.findAll()
+
     // ------------------- Helper Methods -------------------
 
     /**
@@ -141,11 +143,8 @@ class VisitService(
      */
     private fun validateVitals(vitalsJson: String?) {
         if (vitalsJson.isNullOrBlank()) return
-
-        // Here you would deserialize the JSON and check for required fields
-        // (e.g., heart_rate, temperature) and value ranges.
         try {
-            objectMapper.readTree(vitalsJson)
+            val jsonNode = objectMapper.readTree(vitalsJson)
         } catch (e: Exception) {
             throw IllegalArgumentException("Invalid vitalsJson format: ${e.message}")
         }
