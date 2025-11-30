@@ -12,7 +12,7 @@ import java.util.UUID
 @Service
 class PatientService(
     private val patientRepository: PatientRepository,
-    private val ownerService: OwnerService,
+    private val patientOwnerQueryService: PatientOwnerQueryService,
     private val auditLogService: AuditLogService,
     private val objectMapper: ObjectMapper
 ) {
@@ -33,7 +33,7 @@ class PatientService(
         actorUserId: UUID?, // For auditing
         actorIp: String?    // For auditing
     ): Patient {
-        val owner: Owner = ownerService.getOwner(ownerId)
+        val owner: Owner = patientOwnerQueryService.getOwnerById(ownerId)
 
         val now = OffsetDateTime.now()
         val patient = Patient(

@@ -2,6 +2,8 @@ package com.vettrack.core.domain
 
 import jakarta.persistence.*
 import org.hibernate.annotations.UuidGenerator
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -27,12 +29,14 @@ class AuditLog(
     @Column(nullable = false)
     var action: String,        // "create", "update", "delete"
 
-    @Column(name = "diff_snapshot", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "diff_snapshot")
     var diffSnapshot: String? = null,
 
     @Column(name = "occurred_at", nullable = false)
     var occurredAt: OffsetDateTime = OffsetDateTime.now(),
 
+    @JdbcTypeCode(SqlTypes.INET)   // 👈 here
     @Column(name = "ip")
-    var ip: String? = null
+    var ip: String? = null,
 )

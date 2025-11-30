@@ -1,5 +1,6 @@
 package com.vettrack.core.domain
 
+import com.vettrack.core.api.owner.OwnerResponse
 import jakarta.persistence.*
 import org.hibernate.annotations.UuidGenerator
 import java.time.OffsetDateTime
@@ -39,5 +40,16 @@ class Owner (
         ).apply {
             id = this@Owner.id
         }
+    }
+
+    fun toResponse(): OwnerResponse {
+        return OwnerResponse(
+            id = this.id!!,
+            name = this.name,
+            phone = this.phone,
+            email = this.email,
+            createdAt = this.createdAt.toString(),
+            updatedAt = this.updatedAt.toString()
+        )
     }
 }

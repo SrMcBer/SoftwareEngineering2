@@ -10,7 +10,7 @@ import java.util.UUID
 @Service
 class OwnerService(
     private val ownerRepository: OwnerRepository,
-    private val patientService: PatientService,
+    private val patientOwnerQueryService: PatientOwnerQueryService,
     private val auditLogService: AuditLogService, // Updated dependency
     private val objectMapper: ObjectMapper
 ) {
@@ -112,7 +112,7 @@ class OwnerService(
         val owner = getOwner(id)
 
         // Optional: prevent hard delete if owner still has patients
-        val hasPatients = patientService.getByOwner(id).isNotEmpty()
+        val hasPatients = patientOwnerQueryService.getByOwnerId(id).isNotEmpty()
         if (hasPatients) {
             throw IllegalStateException("Cannot delete owner $id because they still have registered patients")
         }

@@ -1,10 +1,8 @@
 package com.vettrack.core.service
 
 import com.vettrack.core.domain.User
-import com.vettrack.core.domain.UserRole
 import com.vettrack.core.repository.UserRepository
 import org.springframework.stereotype.Service
-import java.time.OffsetDateTime
 import java.util.UUID
 
 @Service
