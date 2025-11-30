@@ -22,11 +22,7 @@ class AuditLogService(
         diffSnapshotJson: String?,
         ip: String?
     ): AuditLog {
-        val actor: User? = actorUserId?.let { uid ->
-            userRepository.findById(uid).orElseThrow {
-                NoSuchElementException("User $uid not found")
-            }
-        }
+        val actor = actorUserId?.let { userRepository.findById(it).orElse(null) }
 
         val log = AuditLog(
             actor = actor,

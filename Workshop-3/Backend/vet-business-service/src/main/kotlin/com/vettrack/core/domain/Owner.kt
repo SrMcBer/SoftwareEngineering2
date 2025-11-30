@@ -28,4 +28,16 @@ class Owner (
 
     @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
     var patients: MutableList<Patient> = mutableListOf()
-)
+) {
+    fun shallowCopy(): Owner {
+        return Owner(
+            name = this.name,
+            phone = this.phone,
+            email = this.email,
+            createdAt = this.createdAt,
+            updatedAt = this.updatedAt
+        ).apply {
+            id = this@Owner.id
+        }
+    }
+}
