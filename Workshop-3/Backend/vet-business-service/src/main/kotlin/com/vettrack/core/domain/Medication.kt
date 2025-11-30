@@ -56,4 +56,22 @@ class Medication(
         return (startDate == null || !today.isBefore(startDate)) &&
                 (endDate == null || !today.isAfter(endDate))
     }
+
+    fun shallowCopy(): Medication {
+        return Medication(
+            id = this.id,
+            patient = this.patient,
+            name = this.name,
+            dosage = this.dosage,
+            route = this.route,
+            frequency = this.frequency,
+            startDate = this.startDate,
+            endDate = this.endDate,
+            lastAdministeredAt = this.lastAdministeredAt,
+            nextDueAt = this.nextDueAt,
+            createdBy = this.createdBy,
+            createdAt = this.createdAt,
+            updatedAt = this.updatedAt
+        )
+    }
 }

@@ -5,9 +5,7 @@ import com.vettrack.core.domain.Patient
 import com.vettrack.core.domain.Reminder
 import com.vettrack.core.domain.ReminderStatus
 import com.vettrack.core.domain.User
-import com.vettrack.core.repository.PatientRepository
 import com.vettrack.core.repository.ReminderRepository
-import com.vettrack.core.repository.UserRepository
 import org.springframework.stereotype.Service
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -15,8 +13,8 @@ import java.util.UUID
 @Service
 class ReminderService(
     private val reminderRepository: ReminderRepository,
-    private val patientRepository: PatientRepository,
-    private val userRepository: UserRepository,
+    private val patientService: PatientService,
+    private val userService: UserService,
     private val auditLogService: AuditLogService,
     private val objectMapper: ObjectMapper
 ) {
@@ -31,15 +29,9 @@ class ReminderService(
         actorUserId: UUID?, // Audit actor
         actorIp: String?    // Audit IP
     ): Reminder {
-        val patient: Patient = patientRepository.findById(patientId).orElseThrow {
-            NoSuchElementException("Patient $patientId not found")
-        }
+        val patient: Patient = patientService.getById(patientId)
 
-        val createdBy: User? = createdByUserId?.let { uid ->
-            userRepository.findById(uid).orElseThrow {
-                NoSuchElementException("User $uid not found")
-            }
-        }
+        val createdBy: User? = createdByUserId?.let { uid -> userService.getById(uid) }
 
         val now = OffsetDateTime.now()
         val reminder = Reminder(

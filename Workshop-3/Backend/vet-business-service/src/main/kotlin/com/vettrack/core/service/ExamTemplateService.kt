@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.vettrack.core.domain.ExamTemplate
 import com.vettrack.core.domain.User
 import com.vettrack.core.repository.ExamTemplateRepository
-import com.vettrack.core.repository.UserRepository
 import org.springframework.stereotype.Service
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -12,7 +11,7 @@ import java.util.UUID
 @Service
 class ExamTemplateService(
     private val examTemplateRepository: ExamTemplateRepository,
-    private val userRepository: UserRepository,
+    private val userService: UserService,
     private val objectMapper: ObjectMapper
 ) {
 
@@ -25,11 +24,7 @@ class ExamTemplateService(
     ): ExamTemplate {
         validateFieldSchema(fieldsJson)
 
-        val createdBy: User? = createdByUserId?.let { uid ->
-            userRepository.findById(uid).orElseThrow {
-                NoSuchElementException("User $uid not found")
-            }
-        }
+        val createdBy: User? = createdByUserId?.let { uid -> userService.getById(uid) }
 
         val now = OffsetDateTime.now()
         val template = ExamTemplate(

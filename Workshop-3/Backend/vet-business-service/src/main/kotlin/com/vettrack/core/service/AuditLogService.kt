@@ -1,9 +1,7 @@
 package com.vettrack.core.service
 
 import com.vettrack.core.domain.AuditLog
-import com.vettrack.core.domain.User
 import com.vettrack.core.repository.AuditLogRepository
-import com.vettrack.core.repository.UserRepository
 import org.springframework.stereotype.Service
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -11,7 +9,7 @@ import java.util.UUID
 @Service
 class AuditLogService(
     private val auditLogRepository: AuditLogRepository,
-    private val userRepository: UserRepository
+    private val userService: UserService
 ) {
 
     fun log(
@@ -22,7 +20,7 @@ class AuditLogService(
         diffSnapshotJson: String?,
         ip: String?
     ): AuditLog {
-        val actor = actorUserId?.let { userRepository.findById(it).orElse(null) }
+        val actor = actorUserId?.let { userService.getById(it) }
 
         val log = AuditLog(
             actor = actor,

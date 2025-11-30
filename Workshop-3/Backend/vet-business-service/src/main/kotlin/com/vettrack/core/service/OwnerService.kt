@@ -3,7 +3,6 @@ package com.vettrack.core.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.vettrack.core.domain.Owner
 import com.vettrack.core.repository.OwnerRepository
-import com.vettrack.core.repository.PatientRepository
 import org.springframework.stereotype.Service
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -11,7 +10,7 @@ import java.util.UUID
 @Service
 class OwnerService(
     private val ownerRepository: OwnerRepository,
-    private val patientRepository: PatientRepository,
+    private val patientService: PatientService,
     private val auditLogService: AuditLogService, // Updated dependency
     private val objectMapper: ObjectMapper
 ) {
@@ -110,12 +109,10 @@ class OwnerService(
         actorUserId: UUID?,
         actorIp: String?
     ) {
-        val owner = ownerRepository.findById(id).orElseThrow {
-            NoSuchElementException("Owner $id not found")
-        }
+        val owner = getOwner(id)
 
         // Optional: prevent hard delete if owner still has patients
-        val hasPatients = patientRepository.findByOwnerId(id).isNotEmpty()
+        val hasPatients = patientService.getByOwner(id).isNotEmpty()
         if (hasPatients) {
             throw IllegalStateException("Cannot delete owner $id because they still have registered patients")
         }

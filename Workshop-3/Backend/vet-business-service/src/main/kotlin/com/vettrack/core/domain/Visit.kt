@@ -49,4 +49,25 @@ class Visit(
 
     @OneToMany(mappedBy = "visit", fetch = FetchType.LAZY)
     var attachments: MutableList<Attachment> = mutableListOf()
-)
+) {
+    /**
+     * Creates a shallow copy of the Visit object for auditing the 'before' state.
+     */
+    fun shallowCopy(): Visit {
+        return Visit(
+            id = this.id,
+            patient = this.patient,
+            dateTime = this.dateTime,
+            reason = this.reason,
+            vitalsJson = this.vitalsJson,
+            examNotes = this.examNotes,
+            diagnoses = this.diagnoses,
+            procedures = this.procedures,
+            recommendations = this.recommendations,
+            createdBy = this.createdBy,
+            createdAt = this.createdAt,
+            updatedAt = this.updatedAt
+            // Collections (exams, attachments) are excluded.
+        )
+    }
+}

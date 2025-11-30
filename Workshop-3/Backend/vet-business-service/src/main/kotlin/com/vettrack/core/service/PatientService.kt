@@ -3,7 +3,6 @@ package com.vettrack.core.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.vettrack.core.domain.Owner
 import com.vettrack.core.domain.Patient
-import com.vettrack.core.repository.OwnerRepository
 import com.vettrack.core.repository.PatientRepository
 import org.springframework.stereotype.Service
 import java.time.LocalDate
@@ -13,7 +12,7 @@ import java.util.UUID
 @Service
 class PatientService(
     private val patientRepository: PatientRepository,
-    private val ownerRepository: OwnerRepository,
+    private val ownerService: OwnerService,
     private val auditLogService: AuditLogService,
     private val objectMapper: ObjectMapper
 ) {
@@ -34,9 +33,7 @@ class PatientService(
         actorUserId: UUID?, // For auditing
         actorIp: String?    // For auditing
     ): Patient {
-        val owner: Owner = ownerRepository.findById(ownerId).orElseThrow {
-            NoSuchElementException("Owner $ownerId not found")
-        }
+        val owner: Owner = ownerService.getOwner(ownerId)
 
         val now = OffsetDateTime.now()
         val patient = Patient(
@@ -84,9 +81,7 @@ class PatientService(
         actorUserId: UUID?, // For auditing
         actorIp: String?    // For auditing
     ): Patient {
-        val existing = patientRepository.findById(id).orElseThrow {
-            NoSuchElementException("Patient $id not found")
-        }
+        val existing = getById(id)
 
         // Capture state before modification for auditing
         val before = existing.shallowCopy()
@@ -123,9 +118,7 @@ class PatientService(
         actorUserId: UUID?, // For auditing
         actorIp: String?    // For auditing
     ) {
-        val patient = patientRepository.findById(id).orElseThrow {
-            NoSuchElementException("Patient $id not found")
-        }
+        val patient = getById(id)
 
         // Optional check: Ensure no related records (visits, etc.) exist before hard delete
         // If related records exist, a soft delete (marking patient as inactive) might be preferred.
