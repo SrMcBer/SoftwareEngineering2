@@ -1,4 +1,4 @@
-package com.vettrack.vetbusinessservice
+package com.vettrack.core
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest

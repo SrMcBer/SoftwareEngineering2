@@ -1,4 +1,4 @@
-package com.vettrack.vetbusinessservice.domain
+package com.vettrack.core.domain
 
 import jakarta.persistence.*
 import org.hibernate.annotations.UuidGenerator

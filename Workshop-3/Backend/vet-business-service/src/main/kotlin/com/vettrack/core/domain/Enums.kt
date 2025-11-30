@@ -1,4 +1,4 @@
-package com.vettrack.vetbusinessservice.domain
+package com.vettrack.core.domain
 
 enum class UserRole {
     VET,

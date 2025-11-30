@@ -1,4 +1,4 @@
-package com.vettrack.vetbusinessservice
+package com.vettrack.core
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

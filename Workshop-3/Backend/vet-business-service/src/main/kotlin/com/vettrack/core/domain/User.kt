@@ -1,4 +1,4 @@
-package com.vettrack.vetbusinessservice.domain
+package com.vettrack.core.domain
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
