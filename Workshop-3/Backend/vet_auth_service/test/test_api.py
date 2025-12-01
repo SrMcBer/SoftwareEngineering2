@@ -201,3 +201,30 @@ class TestChangePasswordEndpoint:
         
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
+
+class TestCORSMiddleware:
+    """Test cases for CORS middleware"""
+
+    def test_cors_preflight_request(self, client):
+        """Test CORS preflight request"""
+        headers = {
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Headers": "X-Custom-Header",
+        }
+        response = client.options("/health", headers=headers)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.text == "OK"
+        assert response.headers["access-control-allow-origin"] == headers["Origin"]
+        assert headers["Access-Control-Request-Method"] in response.headers["access-control-allow-methods"]
+        assert headers["Access-Control-Request-Headers"] in response.headers["access-control-allow-headers"]
+
+    def test_cors_actual_request(self, client):
+        """Test CORS actual request"""
+        headers = {
+            "Origin": "http://localhost:3000",
+        }
+        response = client.get("/health", headers=headers)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.headers["access-control-allow-origin"] == "*"
+

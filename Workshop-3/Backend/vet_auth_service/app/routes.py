@@ -97,6 +97,7 @@ def login(
         return LoginResponse(
             session_token=session_token,
             user=UserInfo(
+                id=user.id,
                 name=user.name,
                 email=user.email,
                 role=user.role,
