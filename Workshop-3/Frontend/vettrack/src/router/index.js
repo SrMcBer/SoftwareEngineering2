@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 import Login from "../views/Login.vue";
 import Register from "../views/Register.vue";
-import Index from "../views/Index.vue";
+import Index from "../views/index.vue";
 
 const routes = [
   {
