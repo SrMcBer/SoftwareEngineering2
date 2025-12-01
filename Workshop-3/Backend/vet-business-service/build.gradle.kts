@@ -38,6 +38,20 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    testImplementation("io.mockk:mockk:1.13.13")
+    testImplementation("com.ninja-squad:springmockk:5.0.1")
+    testImplementation("io.kotest:kotest-assertions-core:5.9.1")
+    testImplementation("org.testcontainers:junit-jupiter:1.20.1")
+    testImplementation("org.testcontainers:postgresql:1.20.1")
+
+    // Spring Boot Test Dependencies
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+    // Kotlin testing libraries (optional, but good practice)
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    testImplementation("org.junit.jupiter:junit-jupiter-api")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
 
 kotlin {
