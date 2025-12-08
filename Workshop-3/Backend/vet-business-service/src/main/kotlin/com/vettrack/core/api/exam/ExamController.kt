@@ -24,11 +24,11 @@ class ExamController(
 
     data class CreateExamFromTemplateRequest(
         @field:NotNull
-        val patientId: UUID,
+        var patientId: UUID,
         @field:NotNull
-        val visitId: UUID,
+        var visitId: UUID,
         @field:NotNull
-        val templateId: UUID,
+        var templateId: UUID,
         val vitalsJson: String? = null,
         val resultsJson: String,
         val status: ExamStatus? = null

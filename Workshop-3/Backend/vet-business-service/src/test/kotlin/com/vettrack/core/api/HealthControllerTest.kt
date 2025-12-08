@@ -1,6 +1,7 @@
 package com.vettrack.core.api
 
 import com.ninjasquad.springmockk.MockkBean
+import com.vettrack.core.auth.AuthUserClient
 import io.mockk.every
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -8,10 +9,12 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import java.lang.RuntimeException
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 
 @WebMvcTest(HealthController::class)
+@AutoConfigureMockMvc(addFilters = false)
 class HealthControllerTest {
 
     @Autowired
@@ -20,10 +23,21 @@ class HealthControllerTest {
     @MockkBean
     private lateinit var jdbcTemplate: JdbcTemplate
 
+    @MockkBean
+    private lateinit var CurrentUserHolder: com.vettrack.core.auth.CurrentUserHolder
+
+    @MockkBean
+    private lateinit var AuthUserClient: com.vettrack.core.auth.AuthUserClient
+
     @Test
-    fun health_whenDbIsUp_returnsOk() {
-        every { jdbcTemplate.execute(any<String>()) } returns Unit
-        every { jdbcTemplate.queryForObject(any<String>(), String::class.java) } returns "public.app_user"
+    fun health_okWhenDbAndTableExist() {
+        every { jdbcTemplate.execute("SELECT 1") } returns Unit
+        every {
+            jdbcTemplate.queryForObject(
+                "SELECT to_regclass('public.app_user')",
+                String::class.java
+            )
+        } returns "app_user"
 
         mockMvc.perform(get("/health"))
             .andExpect(status().isOk)
@@ -32,9 +46,14 @@ class HealthControllerTest {
     }
 
     @Test
-    fun health_whenSchemaIsMissing_returnsDegraded() {
-        every { jdbcTemplate.execute(any<String>()) } returns Unit
-        every { jdbcTemplate.queryForObject(any<String>(), String::class.java) } returns null
+    fun health_degradedWhenTableMissing() {
+        every { jdbcTemplate.execute("SELECT 1") } returns Unit
+        every {
+            jdbcTemplate.queryForObject(
+                "SELECT to_regclass('public.app_user')",
+                String::class.java
+            )
+        } returns null
 
         mockMvc.perform(get("/health"))
             .andExpect(status().isOk)
@@ -43,8 +62,8 @@ class HealthControllerTest {
     }
 
     @Test
-    fun health_whenDbIsDown_returnsError() {
-        every { jdbcTemplate.execute(any<String>()) } throws RuntimeException("Connection refused")
+    fun health_errorWhenExceptionThrown() {
+        every { jdbcTemplate.execute("SELECT 1") } throws RuntimeException("DB down")
 
         mockMvc.perform(get("/health"))
             .andExpect(status().isOk)

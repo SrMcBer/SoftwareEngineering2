@@ -26,7 +26,7 @@ class MedicationController(
 
     data class PrescribeMedicationRequest(
         @field:NotNull
-        val patientId: UUID,
+        var patientId: UUID,
         @field:NotBlank
         val name: String,
         val dosage: String? = null,

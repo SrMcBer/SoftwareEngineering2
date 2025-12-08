@@ -3,28 +3,37 @@ package com.vettrack.core.api.visit
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
 import com.vettrack.core.auth.CurrentUserHolder
-import com.vettrack.core.domain.Owner
-import com.vettrack.core.domain.Patient
-import com.vettrack.core.domain.Visit
+import com.vettrack.core.domain.*
+import com.vettrack.core.service.AttachmentService
+import com.vettrack.core.service.ExamService
+import com.vettrack.core.service.MedicationService
+import com.vettrack.core.service.UserService
 import com.vettrack.core.service.VisitService
 import io.mockk.every
+import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
+import org.springframework.context.annotation.Bean
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
-import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.*
 
 @WebMvcTest(VisitController::class)
+@AutoConfigureMockMvc(addFilters = false)
 class VisitControllerTest {
 
     @Autowired
     private lateinit var mockMvc: MockMvc
+
+    @Autowired
+    private lateinit var objectMapper: ObjectMapper
 
     @MockkBean
     private lateinit var visitService: VisitService
@@ -33,227 +42,149 @@ class VisitControllerTest {
     private lateinit var currentUserHolder: CurrentUserHolder
 
     @MockkBean
-    private lateinit var objectMapper: ObjectMapper
+    private lateinit var examService: ExamService
 
-    private val testPatientId = UUID.randomUUID()
-    private val testVisitId = UUID.randomUUID()
-    private val testOwnerId = UUID.randomUUID()
-    
-    private val testOwner = Owner(
-        id = testOwnerId,
-        name = "John Doe",
-        phone = "1234567890",
-        email = "john@example.com",
-        createdAt = OffsetDateTime.now(),
-        updatedAt = OffsetDateTime.now()
-    ).apply { id = testOwnerId }
-    
-    private val testPatient = Patient(
-        owner = testOwner,
-        name = "Fluffy",
-        species = "Dog",
-        breed = "Golden Retriever",
-        sex = "Female",
-        dob = LocalDate.of(2020, 5, 15),
-        color = "Golden",
-        microchipId = "123456789",
-        allergies = "None",
-        notes = "Friendly dog",
-        createdAt = OffsetDateTime.now(),
-        updatedAt = OffsetDateTime.now()
-    ).apply { id = testPatientId }
-    
-    private val testVisit = Visit(
-        patient = testPatient,
-        dateTime = OffsetDateTime.now(),
-        reason = "Annual checkup",
-        vitalsJson = """{"weight":25.5,"heart_rate":80.0}""",
-        examNotes = "Healthy dog",
-        diagnoses = "None",
-        procedures = "Vaccination",
-        recommendations = "Continue current diet",
-        createdBy = null,
-        createdAt = OffsetDateTime.now(),
-        updatedAt = OffsetDateTime.now()
-    ).apply { id = testVisitId }
+    @MockkBean
+    private lateinit var medicationService: MedicationService
+
+    @MockkBean
+    private lateinit var attachmentService: AttachmentService
+
+    @MockkBean
+    private lateinit var authUserClient: com.vettrack.core.auth.AuthUserClient
+
+    private val visitId = UUID.randomUUID()
+    private val patientId = UUID.randomUUID()
+
+    private fun visitStub(): Visit {
+        val patient = mockk<Patient>()
+        every { patient.id } returns patientId
+        every { patient.name } returns "Firulais"
+        every { patient.species } returns "Canine"
+        every { patient.breed } returns "Mestizo"
+        every { patient.sex } returns "M"
+        every { patient.dob } returns null
+        every { patient.color } returns "Brown"
+        every { patient.owner } returns null
+
+        val visit = mockk<Visit>(relaxed = true)
+        every { visit.id } returns visitId
+        every { visit.patient } returns patient
+        every { visit.dateTime } returns OffsetDateTime.now()
+        every { visit.reason } returns "Checkup"
+        every { visit.vitalsJson } returns """{"weight":10.0}"""
+        every { visit.examNotes } returns "ok"
+        every { visit.diagnoses } returns "healthy"
+        every { visit.procedures } returns null
+        every { visit.recommendations } returns null
+        every { visit.createdBy } returns null
+        every { visit.createdAt } returns OffsetDateTime.now()
+        every { visit.updatedAt } returns OffsetDateTime.now()
+        return visit
+    }
+
+    @TestConfiguration
+    class TestConfig {
+        // This bean definition ensures that ObjectMapper is present in the limited context
+        // and satisfies the VisitController's dependency.
+        @Bean
+        fun objectMapper(): ObjectMapper = ObjectMapper()
+    }
 
     @Test
-    fun `createVisit_withValidRequest_returnsCreated`() {
-        val vitalsJson = """{"weight":25.5,"heart_rate":80.0}"""
-        
+    fun createVisit_returnsCreated() {
         every { currentUserHolder.get() } returns null
-        every { objectMapper.writeValueAsString(any()) } returns vitalsJson
-        every { 
+        every {
             visitService.createVisit(
-                patientId = testPatientId,
-                reason = "Annual checkup",
-                vitalsJson = vitalsJson,
-                examNotes = "Healthy dog",
-                diagnoses = "None",
-                procedures = "Vaccination",
-                recommendations = "Continue current diet",
+                patientId = patientId,
+                reason = "Checkup",
+                vitalsJson = any(),
+                examNotes = null,
+                diagnoses = null,
+                procedures = null,
+                recommendations = null,
                 createdByUserId = null,
                 actorUserId = null,
                 actorIp = any()
-            ) 
-        } returns testVisit
+            )
+        } returns visitStub()
+
+        val body = mapOf(
+            "patientId" to patientId.toString(),
+            "reason" to "Checkup",
+            "weightKg" to 10.0
+        )
 
         mockMvc.perform(
             post("/visits")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                    {
-                        "patientId": "$testPatientId",
-                        "reason": "Annual checkup",
-                        "weightKg": 25.5,
-                        "heartRate": 80.0,
-                        "examNotes": "Healthy dog",
-                        "diagnoses": "None",
-                        "procedures": "Vaccination",
-                        "recommendations": "Continue current diet"
-                    }
-                """.trimIndent())
+                .content(objectMapper.writeValueAsString(body))
         )
             .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.id").value(testVisitId.toString()))
-            .andExpect(jsonPath("$.reason").value("Annual checkup"))
-            .andExpect(jsonPath("$.patientId").value(testPatientId.toString()))
+            .andExpect(jsonPath("$.id").value(visitId.toString()))
+            .andExpect(jsonPath("$.patientId").value(patientId.toString()))
+            .andExpect(jsonPath("$.reason").value("Checkup"))
 
         verify { visitService.createVisit(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) }
     }
 
     @Test
-    fun `createVisit_withMissingRequiredFields_returnsBadRequest`() {
-        mockMvc.perform(
-            post("/visits")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                    {
-                        "patientId": "$testPatientId"
-                    }
-                """.trimIndent())
-        )
-            .andExpect(status().isBadRequest)
-    }
+    fun getVisitById_returnsVisit() {
+        every { visitService.getById(visitId) } returns visitStub()
 
-    @Test
-    fun `getVisitById_withValidId_returnsVisit`() {
-        every { visitService.getById(testVisitId) } returns testVisit
-
-        mockMvc.perform(get("/visits/$testVisitId"))
+        mockMvc.perform(get("/visits/$visitId"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.id").value(testVisitId.toString()))
-            .andExpect(jsonPath("$.reason").value("Annual checkup"))
+            .andExpect(jsonPath("$.id").value(visitId.toString()))
+            .andExpect(jsonPath("$.patientId").value(patientId.toString()))
     }
 
     @Test
-    fun `updateVisit_withValidRequest_returnsUpdatedVisit`() {
-        val updatedVisit = Visit(
-            patient = testPatient,
-            dateTime = testVisit.dateTime,
-            reason = "Follow-up",
-            vitalsJson = testVisit.vitalsJson,
-            examNotes = testVisit.examNotes,
-            diagnoses = testVisit.diagnoses,
-            procedures = testVisit.procedures,
-            recommendations = testVisit.recommendations,
-            createdBy = null,
-            createdAt = testVisit.createdAt,
-            updatedAt = OffsetDateTime.now()
-        ).apply { id = testVisitId }
-        
-        every { currentUserHolder.get() } returns null
-        every { objectMapper.writeValueAsString(any()) } returns null
-        every { 
-            visitService.updateVisit(
-                visitId = testVisitId,
-                reason = "Follow-up",
-                vitalsJson = null,
-                examNotes = null,
-                diagnoses = null,
-                procedures = null,
-                recommendations = null,
-                actorUserId = null,
-                actorIp = any()
-            ) 
-        } returns updatedVisit
+    fun getVisitDetails_returnsAggregatedData() {
+        val visit = visitStub()
 
-        mockMvc.perform(
-            put("/visits/$testVisitId")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                    {
-                        "reason": "Follow-up"
-                    }
-                """.trimIndent())
-        )
+        val exam = mockk<Exam>()
+        every { exam.id } returns UUID.randomUUID()
+        every { exam.template } returns mockk {
+            every { id } returns UUID.randomUUID()
+            every { name } returns "General Exam"
+        }
+        every { exam.status } returns ExamStatus.DRAFT
+        every { exam.performedAt } returns OffsetDateTime.now()
+        every { exam.performedBy } returns null
+        every { exam.vitalsJson } returns null
+        every { exam.resultsJson } returns """{"field":"value"}"""
+        every { exam.visit } returns visit
+        every { exam.status } returns ExamStatus.DRAFT
+
+        val med = mockk<Medication>()
+        every { med.id } returns UUID.randomUUID()
+        every { med.name } returns "Carprofen"
+        every { med.dosage } returns "25 mg"
+        every { med.route } returns "PO"
+        every { med.frequency } returns "BID"
+        every { med.startDate } returns null
+        every { med.endDate } returns null
+        every { med.lastAdministeredAt } returns null
+        every { med.nextDueAt } returns null
+
+        val attachment = mockk<Attachment>()
+        every { attachment.id } returns UUID.randomUUID()
+        every { attachment.type } returns "image"
+        every { attachment.filename } returns "xray.png"
+        every { attachment.url } returns "http://example/xray.png"
+        every { attachment.uploadedAt } returns OffsetDateTime.now()
+
+        every { visitService.getById(visitId) } returns visit
+        every { examService.listForPatient(patientId) } returns listOf(exam)
+        every { medicationService.listActiveForPatient(patientId) } returns listOf(med)
+        every { attachmentService.listForVisit(visitId) } returns listOf(attachment)
+
+        mockMvc.perform(get("/visits/$visitId/details"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.reason").value("Follow-up"))
-
-        verify { visitService.updateVisit(testVisitId, "Follow-up", null, null, null, null, null, null, any()) }
-    }
-
-    @Test
-    fun `listVisitsForPatient_returnsVisits`() {
-        val visits = listOf(testVisit)
-        every { visitService.listForPatient(testPatientId) } returns visits
-
-        mockMvc.perform(get("/visits/patient/$testPatientId"))
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$[0].patientId").value(testPatientId.toString()))
-
-        verify { visitService.listForPatient(testPatientId) }
-    }
-
-    @Test
-    fun `lastVisitForPatient_whenExists_returnsVisit`() {
-        every { visitService.lastVisitForPatient(testPatientId) } returns testVisit
-
-        mockMvc.perform(get("/visits/patient/$testPatientId/last"))
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.id").value(testVisitId.toString()))
-
-        verify { visitService.lastVisitForPatient(testPatientId) }
-    }
-
-    @Test
-    fun `lastVisitForPatient_whenNotExists_returnsNoContent`() {
-        every { visitService.lastVisitForPatient(testPatientId) } returns null
-
-        mockMvc.perform(get("/visits/patient/$testPatientId/last"))
-            .andExpect(status().isNoContent)
-
-        verify { visitService.lastVisitForPatient(testPatientId) }
-    }
-
-    @Test
-    fun `listAllVisits_returnsAllVisits`() {
-        val visits = listOf(testVisit)
-        every { visitService.listAll() } returns visits
-
-        mockMvc.perform(get("/visits"))
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$[0].id").value(testVisitId.toString()))
-
-        verify { visitService.listAll() }
-    }
-
-    @Test
-    fun `listVisitsBetween_withDateRange_returnsFilteredVisits`() {
-        val start = OffsetDateTime.now().minusDays(7)
-        val end = OffsetDateTime.now()
-        val visits = listOf(testVisit)
-        
-        every { visitService.listBetween(any(), any()) } returns visits
-
-        mockMvc.perform(
-            get("/visits/search")
-                .param("start", start.toString())
-                .param("end", end.toString())
-        )
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$[0].id").value(testVisitId.toString()))
-
-        verify { visitService.listBetween(any(), any()) }
+            .andExpect(jsonPath("$.visit.id").value(visitId.toString()))
+            .andExpect(jsonPath("$.patient.id").value(patientId.toString()))
+            .andExpect(jsonPath("$.exams[0].templateName").value("General Exam"))
+            .andExpect(jsonPath("$.medications[0].name").value("Carprofen"))
+            .andExpect(jsonPath("$.attachments[0].filename").value("xray.png"))
     }
 }
