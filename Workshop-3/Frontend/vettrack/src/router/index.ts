@@ -7,6 +7,7 @@ import { useAuthStore } from "../stores/auth";
 import Login from "../views/Login.vue";
 import Register from "../views/Register.vue";
 import Index from "../views/Index.vue";
+import PatientDetail from "../views/PatientDetail.vue";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -27,6 +28,12 @@ const routes: RouteRecordRaw[] = [
     component: Index,
     meta: { requiresAuth: true },
   },
+  {
+    path: "/patients/:id",
+    name: "PatientDetail",
+    component: PatientDetail,
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({
@@ -35,7 +42,7 @@ const router = createRouter({
 });
 
 // Navigation guard
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _, next) => {
   const authStore = useAuthStore();
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
