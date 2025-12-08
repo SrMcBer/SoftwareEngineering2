@@ -11,7 +11,7 @@ import java.util.UUID
 @Service
 class AuthUserClient (
     private val restClient: RestClient,
-    @Value("http://localhost:8000/me")
+    @Value("http://host.docker.internal:8000/me")
     private val mePath: String
 ) {
     fun getCurrentUser(bearerToken: String): AuthenticatedUser? {
