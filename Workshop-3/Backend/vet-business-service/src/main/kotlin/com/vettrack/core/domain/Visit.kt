@@ -14,7 +14,7 @@ class Visit(
     @UuidGenerator
     var id: UUID? = null,
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "patient_id", nullable = false)
     var patient: Patient,
 
@@ -44,10 +44,10 @@ class Visit(
     @Column(name = "updated_at", nullable = false)
     var updatedAt: OffsetDateTime = OffsetDateTime.now(),
 
-    @OneToMany(mappedBy = "visit", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "visit", fetch = FetchType.EAGER)
     var exams: MutableList<Exam> = mutableListOf(),
 
-    @OneToMany(mappedBy = "visit", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "visit", fetch = FetchType.EAGER)
     var attachments: MutableList<Attachment> = mutableListOf()
 ) {
     /**

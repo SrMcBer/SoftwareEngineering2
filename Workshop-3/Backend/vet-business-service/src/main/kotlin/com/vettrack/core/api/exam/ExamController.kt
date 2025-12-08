@@ -68,7 +68,7 @@ class ExamController(
             performedByUserId = currentUser?.id,
             vitalsJson = body.vitalsJson,
             resultsJson = body.resultsJson,
-            status = body.status ?: ExamStatus.DRAFT,
+            status = body.status ?: ExamStatus.draft,
             actorUserId = currentUser?.id,
             actorIp = actorIp
         )

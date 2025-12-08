@@ -13,6 +13,6 @@ enum class ReminderStatus {
 }
 
 enum class ExamStatus {
-    DRAFT,
-    FINAL
+    draft,
+    final
 }

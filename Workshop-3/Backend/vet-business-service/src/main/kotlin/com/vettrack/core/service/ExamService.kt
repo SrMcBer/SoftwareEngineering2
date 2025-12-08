@@ -27,7 +27,7 @@ class ExamService(
         performedByUserId: UUID?,
         vitalsJson: String? = null,
         resultsJson: String,
-        status: ExamStatus = ExamStatus.DRAFT,
+        status: ExamStatus = ExamStatus.draft,
         actorUserId: UUID?, // Audit actor
         actorIp: String?    // Audit IP
     ): Exam {
@@ -86,7 +86,7 @@ class ExamService(
         }
 
         // Only allow editing if the exam is in DRAFT status
-        require(existing.status == ExamStatus.DRAFT) {
+        require(existing.status == ExamStatus.draft) {
             "Cannot update exam $examId: only DRAFT exams can be modified."
         }
 
@@ -124,7 +124,7 @@ class ExamService(
         }
 
         // Prevent audit if already finalized
-        if (exam.status == ExamStatus.FINAL) return exam
+        if (exam.status == ExamStatus.final) return exam
 
         val before = exam.shallowCopy()
         exam.finish() // Assume this sets status to FINAL and updatedAt

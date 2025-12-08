@@ -15,7 +15,7 @@ class Patient(
     @UuidGenerator
     var id: UUID? = null,
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "owner_id")
     var owner: Owner? = null,
 

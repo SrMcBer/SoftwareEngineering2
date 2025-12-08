@@ -148,13 +148,13 @@ class VisitControllerTest {
             every { id } returns UUID.randomUUID()
             every { name } returns "General Exam"
         }
-        every { exam.status } returns ExamStatus.DRAFT
+        every { exam.status } returns ExamStatus.draft
         every { exam.performedAt } returns OffsetDateTime.now()
         every { exam.performedBy } returns null
         every { exam.vitalsJson } returns null
         every { exam.resultsJson } returns """{"field":"value"}"""
         every { exam.visit } returns visit
-        every { exam.status } returns ExamStatus.DRAFT
+        every { exam.status } returns ExamStatus.draft
 
         val med = mockk<Medication>()
         every { med.id } returns UUID.randomUUID()

@@ -59,7 +59,7 @@ class ExamControllerTest {
         every { exam.patient } returns patient
         every { exam.visit } returns visit
         every { exam.template } returns template
-        every { exam.status } returns ExamStatus.DRAFT
+        every { exam.status } returns ExamStatus.draft
         every { exam.vitalsJson } returns """{"hr": 60}"""
         every { exam.resultsJson } returns """{"field":"value"}"""
         every { exam.performedBy } returns user
@@ -82,7 +82,7 @@ class ExamControllerTest {
                 performedByUserId = userId,
                 vitalsJson = """{"hr":60}""",
                 resultsJson = """{"field":"value"}""",
-                status = ExamStatus.DRAFT,
+                status = ExamStatus.draft,
                 actorUserId = userId,
                 actorIp = any()
             )
@@ -146,7 +146,7 @@ class ExamControllerTest {
         every { currentUserHolder.get() } returns currentUser
 
         val finalized = examStub().also {
-            every { it.status } returns ExamStatus.FINAL
+            every { it.status } returns ExamStatus.final
         }
 
         every {
@@ -159,7 +159,7 @@ class ExamControllerTest {
 
         mockMvc.perform(post("/exams/$examId/finalize"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.status").value("FINAL"))
+            .andExpect(jsonPath("$.status").value("final"))
     }
 
     @Test

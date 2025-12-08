@@ -22,7 +22,7 @@ class Exam(
     @JoinColumn(name = "visit_id")
     var visit: Visit? = null,
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "template_id", nullable = false)
     var template: ExamTemplate,
 
@@ -44,7 +44,7 @@ class Exam(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    var status: ExamStatus = ExamStatus.DRAFT,
+    var status: ExamStatus = ExamStatus.draft,
 
     var notes: String? = null,
 
@@ -58,7 +58,7 @@ class Exam(
     var attachments: MutableList<Attachment> = mutableListOf()
 ) {
     fun finish() {
-        status = ExamStatus.FINAL
+        status = ExamStatus.final
         updatedAt = OffsetDateTime.now()
     }
     /**
