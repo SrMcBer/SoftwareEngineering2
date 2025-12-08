@@ -35,6 +35,7 @@ class ExamTemplateControllerTest {
     private lateinit var currentUserHolder: CurrentUserHolder
 
     @MockkBean
+    @Suppress("UnusedPrivateProperty")
     private lateinit var authUserClient: com.vettrack.core.auth.AuthUserClient
 
     private val templateId = UUID.randomUUID()

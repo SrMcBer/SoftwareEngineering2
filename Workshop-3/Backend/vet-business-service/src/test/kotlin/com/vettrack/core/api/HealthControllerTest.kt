@@ -1,7 +1,6 @@
 package com.vettrack.core.api
 
 import com.ninjasquad.springmockk.MockkBean
-import com.vettrack.core.auth.AuthUserClient
 import io.mockk.every
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -24,9 +23,11 @@ class HealthControllerTest {
     private lateinit var jdbcTemplate: JdbcTemplate
 
     @MockkBean
+    @Suppress("UnusedPrivateProperty")
     private lateinit var CurrentUserHolder: com.vettrack.core.auth.CurrentUserHolder
 
     @MockkBean
+    @Suppress("UnusedPrivateProperty")
     private lateinit var AuthUserClient: com.vettrack.core.auth.AuthUserClient
 
     @Test

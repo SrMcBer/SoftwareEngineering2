@@ -136,7 +136,7 @@ class ExamController(
             id = this.id!!,
             patientId = this.patient.id!!,
             visitId = this.visit?.id!!,
-            templateId = this.template?.id,
+            templateId = this.template.id,
             status = this.status,
             vitalsJson = this.vitalsJson,
             resultsJson = this.resultsJson,

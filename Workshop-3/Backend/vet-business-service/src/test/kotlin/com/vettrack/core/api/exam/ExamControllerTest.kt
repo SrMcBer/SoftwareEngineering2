@@ -32,6 +32,7 @@ class ExamControllerTest {
     private lateinit var currentUserHolder: CurrentUserHolder
 
     @MockkBean
+    @Suppress("UnusedPrivateProperty")
     private lateinit var authUserClient: com.vettrack.core.auth.AuthUserClient
 
     private val examId = UUID.randomUUID()

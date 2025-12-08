@@ -7,7 +7,6 @@ import com.vettrack.core.domain.*
 import com.vettrack.core.service.AttachmentService
 import com.vettrack.core.service.ExamService
 import com.vettrack.core.service.MedicationService
-import com.vettrack.core.service.UserService
 import com.vettrack.core.service.VisitService
 import io.mockk.every
 import io.mockk.mockk
@@ -51,6 +50,7 @@ class VisitControllerTest {
     private lateinit var attachmentService: AttachmentService
 
     @MockkBean
+    @Suppress("UnusedPrivateProperty")
     private lateinit var authUserClient: com.vettrack.core.auth.AuthUserClient
 
     private val visitId = UUID.randomUUID()
