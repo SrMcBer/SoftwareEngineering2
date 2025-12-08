@@ -1,14 +1,21 @@
-<template>
-  <router-view />
-</template>
-
-<script setup>
+<script setup lang="ts">
 import { onMounted } from "vue";
 import { useAuthStore } from "./stores/auth";
+
+// sonner styles + component
+import "vue-sonner/style.css";
+import { Toaster } from "@/components/ui/sonner";
 
 const authStore = useAuthStore();
 
 onMounted(() => {
-  authStore.initAuth();
+  authStore.initFromStorage();
 });
 </script>
+
+<template>
+  <div class="min-h-screen bg-background text-foreground">
+    <router-view />
+    <Toaster position="top-right" rich-colors close-button expand />
+  </div>
+</template>

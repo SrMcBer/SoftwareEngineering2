@@ -1,97 +1,157 @@
+// src/stores/auth.ts
 import { defineStore } from "pinia";
-import axios from "axios";
+import { authApi } from "../services/authApi";
+import type {
+  UserInfo,
+  LoginRequest,
+  UserRegisterRequest,
+  ChangePasswordRequest,
+} from "../types/auth";
+import router from "../router"; // adjust path if needed
 
-// Configure axios base URL - update this to match your FastAPI backend
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+interface AuthState {
+  user: UserInfo | null;
+  sessionToken: string | null;
+  loading: boolean;
+  error: string | null;
+}
+
+const STORAGE_KEY = "vettrack_auth";
+
 export const useAuthStore = defineStore("auth", {
-  state: () => ({
+  state: (): AuthState => ({
     user: null,
-    token: localStorage.getItem("token") || null,
+    sessionToken: null,
     loading: false,
+    error: null,
   }),
 
   getters: {
-    isAuthenticated: (state) => !!state.token,
+    isAuthenticated: (state) => !!state.sessionToken && !!state.user,
   },
 
   actions: {
-    async login(credentials) {
-      this.loading = true;
+    // Call this once on app start (e.g. in App.vue or main.ts)
+    async initFromStorage() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+
       try {
-        // Adjust the endpoint and payload format based on your FastAPI schema
-        const response = await axios.post(`${API_URL}/login`, credentials);
-
-        this.token = response.data.session_token;
-        this.user = response.data.user;
-
-        localStorage.setItem("token", this.token);
-
-        // Set default authorization header
-        axios.defaults.headers.common["Authorization"] = `Bearer ${this.token}`;
-
-        return { success: true };
-      } catch (error) {
-        console.error("Login error:", error);
-        return {
-          success: false,
-          error:
-            error.response?.data?.detail || "Login failed. Please try again.",
+        const parsed = JSON.parse(raw) as {
+          user: UserInfo;
+          sessionToken: string;
         };
-      } finally {
-        this.loading = false;
+        this.user = parsed.user;
+        this.sessionToken = parsed.sessionToken;
+
+        // Optional: verify token by hitting /me
+        const freshUser = await authApi.getMe(this.sessionToken);
+        this.user = freshUser;
+        this.persist();
+      } catch {
+        this.clear();
       }
     },
 
-    async register(userData) {
-      this.loading = true;
-      try {
-        // Adjust the endpoint and payload format based on your FastAPI schema
-        const response = await axios.post(`${API_URL}/auth/register`, userData);
-
-        // Optionally auto-login after registration
-        this.token = response.data.access_token;
-        this.user = response.data.user;
-
-        localStorage.setItem("token", this.token);
-        axios.defaults.headers.common["Authorization"] = `Bearer ${this.token}`;
-
-        return { success: true };
-      } catch (error) {
-        console.error("Registration error:", error);
-        return {
-          success: false,
-          error:
-            error.response?.data?.detail ||
-            "Registration failed. Please try again.",
-        };
-      } finally {
-        this.loading = false;
+    persist() {
+      if (this.user && this.sessionToken) {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            user: this.user,
+            sessionToken: this.sessionToken,
+          })
+        );
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
       }
     },
 
-    logout() {
+    clear() {
       this.user = null;
-      this.token = null;
-      localStorage.removeItem("token");
-      delete axios.defaults.headers.common["Authorization"];
+      this.sessionToken = null;
+      this.error = null;
+      localStorage.removeItem(STORAGE_KEY);
     },
 
-    // Initialize auth state from localStorage
-    initAuth() {
-      if (this.token) {
-        axios.defaults.headers.common["Authorization"] = `Bearer ${this.token}`;
-        // Optionally fetch current user data here
-        // this.fetchCurrentUser()
+    async login(payload: LoginRequest) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const { session_token, user } = await authApi.login(payload);
+        this.sessionToken = session_token;
+        this.user = user;
+        this.persist();
+        // navigate to home if you like
+        await router.push("/");
+      } catch (err: any) {
+        this.error =
+          err?.response?.data?.message ||
+          err?.message ||
+          "Error while logging in";
+        throw err;
+      } finally {
+        this.loading = false;
       }
     },
 
-    async fetchCurrentUser() {
+    async register(payload: UserRegisterRequest) {
+      this.loading = true;
+      this.error = null;
       try {
-        const response = await axios.get(`${API_URL}/auth/me`);
-        this.user = response.data;
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
-        this.logout();
+        await authApi.register(payload);
+        // After registering, auto-login:
+        await this.login({
+          email: payload.email,
+          password: payload.password,
+        });
+      } catch (err: any) {
+        this.error =
+          err?.response?.data?.message ||
+          err?.message ||
+          "Error while registering";
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async logout() {
+      if (!this.sessionToken) {
+        this.clear();
+        await router.push("/login");
+        return;
+      }
+
+      this.loading = true;
+      this.error = null;
+      try {
+        await authApi.logout(this.sessionToken);
+      } catch {
+        // even if logout fails on server, clear local state
+      } finally {
+        this.clear();
+        this.loading = false;
+        await router.push("/login");
+      }
+    },
+
+    async changePassword(payload: ChangePasswordRequest) {
+      if (!this.sessionToken) {
+        throw new Error("Not authenticated");
+      }
+      this.loading = true;
+      this.error = null;
+      try {
+        await authApi.changePassword(this.sessionToken, payload);
+      } catch (err: any) {
+        this.error =
+          err?.response?.data?.message ||
+          err?.message ||
+          "Error while changing password";
+        throw err;
+      } finally {
+        this.loading = false;
       }
     },
   },

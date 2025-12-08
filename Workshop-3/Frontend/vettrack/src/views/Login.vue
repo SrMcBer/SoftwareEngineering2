@@ -1,99 +1,88 @@
-<template>
-  <div
-    class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4"
-  >
-    <div class="w-full max-w-md">
-      <div class="bg-white rounded-lg shadow-2xl p-8">
-        <div class="text-center mb-8">
-          <h2 class="text-3xl font-bold text-gray-900">Welcome back</h2>
-          <p class="text-gray-600 mt-2">Sign in to your account</p>
-        </div>
-
-        <form @submit.prevent="handleLogin" class="space-y-6">
-          <div class="space-y-2">
-            <label for="email" class="text-sm font-medium text-gray-900">
-              Email
-            </label>
-            <input
-              id="email"
-              v-model="form.email"
-              type="email"
-              required
-              placeholder="you@example.com"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
-          </div>
-
-          <div class="space-y-2">
-            <label for="password" class="text-sm font-medium text-gray-900">
-              Password
-            </label>
-            <input
-              id="password"
-              v-model="form.password"
-              type="password"
-              required
-              placeholder="••••••••"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
-          </div>
-
-          <div
-            v-if="error"
-            class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm"
-          >
-            {{ error }}
-          </div>
-
-          <button
-            type="submit"
-            :disabled="authStore.loading"
-            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {{ authStore.loading ? "Signing in..." : "Sign in" }}
-          </button>
-        </form>
-
-        <div class="mt-6 text-center">
-          <p class="text-sm text-gray-600">
-            Don't have an account?
-            <router-link
-              to="/register"
-              class="font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              Sign up
-            </router-link>
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
-<script setup>
+<script setup lang="ts">
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
+import { useRouter } from "vue-router";
+import type { LoginRequest } from "../types/auth";
 
-const router = useRouter();
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+
 const authStore = useAuthStore();
+const router = useRouter();
 
-const form = ref({
+const form = ref<LoginRequest>({
   email: "",
   password: "",
 });
 
-const error = ref("");
+const error = ref<string | null>(null);
 
-const handleLogin = async () => {
-  error.value = "";
-
-  const result = await authStore.login(form.value);
-
-  if (result.success) {
-    router.push("/");
-  } else {
-    error.value = result.error;
+const onSubmit = async () => {
+  error.value = null;
+  try {
+    await authStore.login(form.value);
+    // router push happens in store, but you can keep it here if you want
+    // await router.push("/");
+  } catch (e: any) {
+    error.value = authStore.error ?? "Login failed";
   }
 };
 </script>
+
+<template>
+  <div class="min-h-screen flex items-center justify-center">
+    <Card class="w-full max-w-md">
+      <CardHeader>
+        <CardTitle>Login</CardTitle>
+      </CardHeader>
+
+      <CardContent>
+        <form class="space-y-4" @submit.prevent="onSubmit">
+          <div class="space-y-2">
+            <Label for="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              v-model="form.email"
+              required
+              autocomplete="email"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <Label for="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              v-model="form.password"
+              required
+              autocomplete="current-password"
+            />
+          </div>
+
+          <p v-if="error" class="text-sm text-red-500">
+            {{ error }}
+          </p>
+
+          <Button
+            type="submit"
+            class="w-full"
+            :disabled="authStore.loading"
+          >
+            <span v-if="authStore.loading">Logging in...</span>
+            <span v-else>Login</span>
+          </Button>
+        </form>
+      </CardContent>
+
+      <CardFooter class="text-sm text-muted-foreground">
+        <span>Don’t have an account?</span>
+        <Button variant="link" class="px-1" @click="router.push('/register')">
+          Register
+        </Button>
+      </CardFooter>
+    </Card>
+  </div>
+</template>
