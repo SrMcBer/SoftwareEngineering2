@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://host.docker.internal:5432/vettrack_db
+    url: jdbc:postgresql://localhost:5432/vettrack_db
     username: vettrack_user
     password: vettrack_password
   jpa:

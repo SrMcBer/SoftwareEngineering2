@@ -3,6 +3,8 @@ package com.vettrack.core.api.patient
 import com.vettrack.core.auth.CurrentUserHolder
 import com.vettrack.core.domain.Patient
 import com.vettrack.core.service.PatientService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
@@ -13,17 +15,15 @@ import org.springframework.web.bind.annotation.*
 import java.time.LocalDate
 import java.util.UUID
 
+@Tag(name = "Patients", description = "Operations related to patients")
 @RestController
 @RequestMapping("/patients")
 class PatientController(
     private val patientService: PatientService,
     private val currentUserHolder: CurrentUserHolder
 ) {
-    /**
-     * Register a new patient for an owner
-     *
-     * POST /patients
-     */
+
+    @Operation(summary = "Register a new patient")
     @PostMapping
     fun registerPatient(
         @Valid @RequestBody request: RegisterPatientRequest,
@@ -52,11 +52,7 @@ class PatientController(
             .body(patient.toResponse())
     }
 
-    /**
-     * Get a patient by id
-     *
-     * GET /patients/{id}
-     */
+    @Operation(summary = "Get a patient by ID")
     @GetMapping("/{id}")
     fun getPatient(
         @PathVariable id: UUID
@@ -65,11 +61,7 @@ class PatientController(
         return patient.toResponse()
     }
 
-    /**
-     * Update a patient
-     *
-     * PUT /patients/{id}
-     */
+    @Operation(summary = "Update a patient")
     @PutMapping("/{id}")
     fun updatePatient(
         @PathVariable id: UUID,
@@ -97,11 +89,7 @@ class PatientController(
         return updated.toResponse()
     }
 
-    /**
-     * Delete a patient
-     *
-     * DELETE /patients/{id}
-     */
+    @Operation(summary = "Delete a patient")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deletePatient(
@@ -118,13 +106,10 @@ class PatientController(
         )
     }
 
-    /**
-     * Query patients:
-     *  - /patients?ownerId=... => by owner
-     *  - /patients?q=fluffy    => search by name (contains, case-insensitive)
-     *
-     * (You can extend this later to support "list all" explicitly.)
-     */
+    @Operation(
+        summary = "List or search patients",
+        description = "List all patients, filter by ownerId, or search by name"
+    )
     @GetMapping
     fun queryPatients(
         @RequestParam("ownerId", required = false) ownerId: UUID?,
@@ -139,11 +124,7 @@ class PatientController(
         return patients.map { it.toResponse() }
     }
 
-    /**
-     * Find patient by microchip
-     *
-     * GET /patients/by-microchip/{microchipId}
-     */
+    @Operation(summary = "Find patient by microchip")
     @GetMapping("/by-microchip/{microchipId}")
     fun getByMicrochip(
         @PathVariable microchipId: String
@@ -163,8 +144,7 @@ class PatientController(
     }
 }
 
-// --------- DTOs ---------
-
+// DTOs & mapping unchanged from your current version
 data class RegisterPatientRequest(
     val ownerId: UUID,
 
@@ -180,8 +160,7 @@ data class RegisterPatientRequest(
     val breed: String? = null,
 
     @field:Size(max = 16)
-    val sex: String? = null,        // later you might want an enum
-
+    val sex: String? = null,
     val dob: LocalDate? = null,
 
     @field:Size(max = 64)
@@ -189,7 +168,6 @@ data class RegisterPatientRequest(
 
     @field:Size(max = 64)
     val microchipId: String? = null,
-
     val allergies: String? = null,
     val notes: String? = null
 )
@@ -221,8 +199,6 @@ data class PatientResponse(
     val createdAt: String?,
     val updatedAt: String?
 )
-
-// --------- Mapping extension ---------
 
 private fun Patient.toResponse(): PatientResponse =
     PatientResponse(

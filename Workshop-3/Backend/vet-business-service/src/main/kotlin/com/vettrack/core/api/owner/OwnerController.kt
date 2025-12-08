@@ -2,6 +2,8 @@ package com.vettrack.core.api.owner
 
 import com.vettrack.core.auth.CurrentUserHolder
 import com.vettrack.core.service.OwnerService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
@@ -10,29 +12,23 @@ import jakarta.validation.constraints.Email
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import java.security.Principal
 import java.util.UUID
 
+@Tag(name = "Owners", description = "Operations related to patient owners")
 @RestController
 @RequestMapping("/owners")
-class OwnerController (
+class OwnerController(
     private val ownerService: OwnerService,
     private val currentUserHolder: CurrentUserHolder
-
 ) {
-    /**
-     * Create a new owner
-     *
-     * POST /owners
-     */
+
+    @Operation(summary = "Create a new owner")
     @PostMapping
     fun createOwner(
         @Valid @RequestBody request: CreateOwnerRequest,
-        httpServletRequest: HttpServletRequest,
+        httpServletRequest: HttpServletRequest
     ): ResponseEntity<OwnerResponse> {
-
         val currentUser = currentUserHolder.get()
-
         val owner = ownerService.createOwner(
             name = request.name,
             phone = request.phone,
@@ -46,11 +42,7 @@ class OwnerController (
             .body(owner.toResponse())
     }
 
-    /**
-     * Get a single owner by id
-     *
-     * GET /owners/{id}
-     */
+    @Operation(summary = "Get an owner by ID")
     @GetMapping("/{id}")
     fun getOwner(
         @PathVariable id: UUID
@@ -59,20 +51,14 @@ class OwnerController (
         return owner.toResponse()
     }
 
-    /**
-     * Update an owner (full or partial)
-     *
-     * PUT /owners/{id}
-     */
+    @Operation(summary = "Update an owner")
     @PutMapping("/{id}")
     fun updateOwner(
         @PathVariable id: UUID,
         @Valid @RequestBody request: UpdateOwnerRequest,
-        httpServletRequest: HttpServletRequest,
+        httpServletRequest: HttpServletRequest
     ): OwnerResponse {
-
         val currentUser = currentUserHolder.get()
-
         val actorIp = extractIp(httpServletRequest)
 
         val updated = ownerService.updateOwner(
@@ -87,21 +73,17 @@ class OwnerController (
         return updated.toResponse()
     }
 
-    /**
-     * Delete an owner
-     *
-     * DELETE /owners/{id}
-     *
-     * Will throw IllegalStateException from service if owner still has patients.
-     */
+    @Operation(
+        summary = "Delete an owner",
+        description = "Will fail if the owner still has patients."
+    )
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.ACCEPTED)
     fun deleteOwner(
         @PathVariable id: UUID,
-        httpServletRequest: HttpServletRequest,
+        httpServletRequest: HttpServletRequest
     ) {
         val currentUser = currentUserHolder.get()
-
         val actorIp = extractIp(httpServletRequest)
 
         ownerService.deleteOwner(
@@ -111,13 +93,10 @@ class OwnerController (
         )
     }
 
-    /**
-     * List/search owners
-     *
-     * GET /owners
-     *   - /owners            -> list all
-     *   - /owners?name=foo      -> search by name (contains, case-insensitive)
-     */
+    @Operation(
+        summary = "List or search owners",
+        description = "List all owners or search by name (contains, case-insensitive)"
+    )
     @GetMapping
     fun listOwners(
         @RequestParam("name", required = false) query: String?
@@ -131,34 +110,14 @@ class OwnerController (
         return owners.map { it.toResponse() }
     }
 
-    // --------- Helpers for audit fields ---------
-
-    /**
-     * Very simple example:
-     * - if Principal.name is a UUID string, we use it
-     * - otherwise we just return null
-     *
-     * In a "real" setup, you'd adapt this to your JWT/custom principal.
-     */
-    private fun extractActorUserId(principal: Principal?): UUID? {
-        val name = principal?.name ?: return null
-        return try {
-            UUID.fromString(name)
-        } catch (_: IllegalArgumentException) {
-            null
-        }
-    }
-
     private fun extractIp(request: HttpServletRequest): String? {
-        // If you have a proxy/load balancer, prefer X-Forwarded-For, etc.
         val forwarded = request.getHeader("X-Forwarded-For")
         return forwarded?.split(",")?.firstOrNull()?.trim()
             ?: request.remoteAddr
     }
 }
 
-// --------- DTOs ---------
-
+// DTOs & mapping unchanged
 data class CreateOwnerRequest(
     @field:NotBlank
     @field:Size(max = 255)

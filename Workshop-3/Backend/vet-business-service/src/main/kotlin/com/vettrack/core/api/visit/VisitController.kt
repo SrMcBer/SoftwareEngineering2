@@ -3,7 +3,14 @@ package com.vettrack.core.api.visit
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.vettrack.core.auth.CurrentUserHolder
 import com.vettrack.core.domain.Visit
+import com.vettrack.core.service.AttachmentService
+import com.vettrack.core.service.ExamService
+import com.vettrack.core.service.MedicationService
 import com.vettrack.core.service.VisitService
+import com.vettrack.core.domain.Patient
+import com.vettrack.core.domain.Medication
+import com.vettrack.core.domain.Exam
+import com.vettrack.core.domain.Attachment
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
@@ -15,19 +22,23 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.time.OffsetDateTime
 import java.util.UUID
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
+import java.time.LocalDate
 
+@Tag(name = "Visits", description = "Operations related to patient visits")
 @RestController
 @RequestMapping("/visits")
 class VisitController(
     private val visitService: VisitService,
     private val currentUserHolder: CurrentUserHolder,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val examService: ExamService,
+    private val medicationService: MedicationService,
+    private val attachmentService: AttachmentService
 ) {
-    /**
-     * Create a new visit
-     *
-     * POST /visits
-     */
+
+    @Operation(summary = "Create a visit")
     @PostMapping
     fun createVisit(
         @Valid @RequestBody request: CreateVisitRequest,
@@ -36,7 +47,6 @@ class VisitController(
         val currentUser = currentUserHolder.get()
         val ip = extractIp(httpServletRequest)
 
-        // 1. Build vitalsJson from individual fields using ObjectMapper
         val vitalsJson = buildVitalsJson(request)
 
         val visit = visitService.createVisit(
@@ -57,11 +67,7 @@ class VisitController(
             .body(visit.toResponse())
     }
 
-    /**
-     * Update an existing visit
-     *
-     * PUT /visits/{id}
-     */
+    @Operation(summary = "Update an existing visit")
     @PutMapping("/{id}")
     fun updateVisit(
         @PathVariable id: UUID,
@@ -71,8 +77,6 @@ class VisitController(
         val currentUser = currentUserHolder.get()
         val ip = extractIp(httpServletRequest)
 
-        // 1. Build vitalsJson from individual fields if any vital is present
-        // Pass the request to the helper, which will intelligently handle nulls.
         val vitalsJson = buildVitalsJson(request)
 
         val updated = visitService.updateVisit(
@@ -90,16 +94,63 @@ class VisitController(
         return updated.toResponse()
     }
 
-    // --- Read/Search Endpoints ---
-
+    @Operation(summary = "Get a visit by ID")
     @GetMapping("/{id}")
     fun getVisitById(@PathVariable id: UUID): VisitResponse =
         visitService.getById(id).toResponse()
 
+    /**
+     * Get a visit with all related clinical details
+     *
+     * GET /visits/{id}/details
+     *
+     * Returns:
+     *  - Visit core data
+     *  - Patient summary
+     *  - Exams for this visit
+     *  - Active medications for the patient
+     *  - Attachments linked to this visit
+     */
+    @Operation(
+        summary = "Get full details for a visit",
+        description = "Fetches a visit together with patient summary, exams, medications and attachments in a single call."
+    )
+    @GetMapping("/{id}/details")
+    fun getVisitDetails(
+        @PathVariable id: UUID
+    ): VisitDetailsResponse {
+        // 1. Core visit (includes patient)
+        val visit: Visit = visitService.getById(id)
+        val patient: Patient = visit.patient
+
+        // 2. Exams *for this visit*
+        val examsForVisit: List<Exam> =
+            examService.listForPatient(patient.id!!)
+                .filter { it.visit?.id == visit.id }
+
+        // 3. Active medications for this patient (current long-term meds)
+        val medicationsForPatient: List<Medication> =
+            medicationService.listActiveForPatient(patient.id!!)
+
+        // 4. Attachments for this visit (assuming such a method exists)
+        val attachmentsForVisit: List<Attachment> =
+            attachmentService.listForVisit(visit.id!!)
+
+        return VisitDetailsResponse(
+            visit = visit.toResponse(),
+            patient = patient.toVisitPatientSummary(),
+            exams = examsForVisit.map { it.toVisitExamSummary() },
+            medications = medicationsForPatient.map { it.toVisitMedicationSummary() },
+            attachments = attachmentsForVisit.map { it.toVisitAttachmentSummary() }
+        )
+    }
+
+    @Operation(summary = "List visits for a patient")
     @GetMapping("/patient/{patientId}")
     fun listVisitsForPatient(@PathVariable patientId: UUID): List<VisitResponse> =
         visitService.listForPatient(patientId).map { it.toResponse() }
 
+    @Operation(summary = "Get last visit for a patient")
     @GetMapping("/patient/{patientId}/last")
     fun lastVisitForPatient(@PathVariable patientId: UUID): ResponseEntity<VisitResponse> {
         val lastVisit = visitService.lastVisitForPatient(patientId)
@@ -110,6 +161,7 @@ class VisitController(
         }
     }
 
+    @Operation(summary = "List visits between two datetimes")
     @GetMapping("/search")
     fun listVisitsBetween(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) start: OffsetDateTime,
@@ -117,10 +169,10 @@ class VisitController(
     ): List<VisitResponse> =
         visitService.listBetween(start, end).map { it.toResponse() }
 
+    @Operation(summary = "List all visits")
     @GetMapping
     fun listAllVisits(): List<VisitResponse> =
         visitService.listAll().map { it.toResponse() }
-
 
     // ---------- helpers ----------
 
@@ -130,9 +182,6 @@ class VisitController(
             ?: request.remoteAddr
     }
 
-    /**
-     * Helper to build the vitals JSON string from request DTO fields.
-     */
     private fun buildVitalsJson(request: BaseVisitRequest): String? {
         val vitals = mutableMapOf<String, Double>()
 
@@ -158,20 +207,17 @@ interface BaseVisitRequest {
 
 data class CreateVisitRequest(
     @field:NotNull
-    val patientId: UUID,
+    var patientId: UUID,
 
     @field:NotBlank
     @field:Size(max = 255)
     val reason: String,
 
-    val examNotes: String? = null, // Maps to service's 'examNotes'
-
-    // Vital Signs (implements BaseVisitRequest)
+    val examNotes: String? = null,
     override val weightKg: Double? = null,
     override val heartRate: Double? = null,
     override val temperatureC: Double? = null,
     override val respiratoryRate: Double? = null,
-
     val diagnoses: String? = null,
     val procedures: String? = null,
     val recommendations: String? = null
@@ -180,13 +226,10 @@ data class CreateVisitRequest(
 data class UpdateVisitRequest(
     val reason: String? = null,
     val examNotes: String? = null,
-
-    // Vital Signs (implements BaseVisitRequest)
     override val weightKg: Double? = null,
     override val heartRate: Double? = null,
     override val temperatureC: Double? = null,
     override val respiratoryRate: Double? = null,
-
     val diagnoses: String? = null,
     val procedures: String? = null,
     val recommendations: String? = null
@@ -195,7 +238,7 @@ data class UpdateVisitRequest(
 data class VisitResponse(
     val id: UUID,
     val patientId: UUID,
-    val dateTime: OffsetDateTime, // From Visit.dateTime
+    val dateTime: OffsetDateTime,
     val reason: String,
     val vitalsJson: String?,
     val examNotes: String?,
@@ -207,7 +250,111 @@ data class VisitResponse(
     val updatedAt: OffsetDateTime
 )
 
-// Basic visit → response
+data class VisitDetailsResponse(
+    val visit: VisitResponse,
+    val patient: VisitPatientSummary,
+    val exams: List<VisitExamSummary>,
+    val medications: List<VisitMedicationSummary>,
+    val attachments: List<VisitAttachmentSummary>
+)
+
+// --- Patient summary (embedded in visit details) ---
+
+data class VisitPatientSummary(
+    val id: UUID,
+    val ownerId: UUID?,
+    val name: String,
+    val species: String,
+    val breed: String?,
+    val sex: String?,
+    val dob: LocalDate?,
+    val color: String?
+)
+
+fun Patient.toVisitPatientSummary(): VisitPatientSummary =
+    VisitPatientSummary(
+        id = this.id!!,
+        ownerId = this.owner?.id,
+        name = this.name,
+        species = this.species,
+        breed = this.breed,
+        sex = this.sex,
+        dob = this.dob,
+        color = this.color
+    )
+
+// --- Exam summary ---
+
+data class VisitExamSummary(
+    val id: UUID,
+    val templateId: UUID,
+    val templateName: String,
+    val status: String,
+    val performedAt: OffsetDateTime,
+    val performedByUserId: UUID?,
+    val vitalsJson: String?,
+    val resultsJson: String?
+)
+
+fun Exam.toVisitExamSummary(): VisitExamSummary =
+    VisitExamSummary(
+        id = this.id!!,
+        templateId = this.template.id!!,
+        templateName = this.template.name,
+        status = this.status.name,
+        performedAt = this.performedAt,
+        performedByUserId = this.performedBy?.id,
+        vitalsJson = this.vitalsJson,
+        resultsJson = this.resultsJson
+    )
+
+// --- Medication summary ---
+
+data class VisitMedicationSummary(
+    val id: UUID,
+    val name: String,
+    val dosage: String?,
+    val route: String?,
+    val frequency: String?,
+    val startDate: LocalDate?,
+    val endDate: LocalDate?,
+    val lastAdministeredAt: OffsetDateTime?,
+    val nextDueAt: OffsetDateTime?
+)
+
+fun Medication.toVisitMedicationSummary(): VisitMedicationSummary =
+    VisitMedicationSummary(
+        id = this.id!!,
+        name = this.name,
+        dosage = this.dosage,
+        route = this.route,
+        frequency = this.frequency,
+        startDate = this.startDate,
+        endDate = this.endDate,
+        lastAdministeredAt = this.lastAdministeredAt,
+        nextDueAt = this.nextDueAt
+    )
+
+// --- Attachment summary ---
+// Adjust fields to match your Attachment domain
+
+data class VisitAttachmentSummary(
+    val id: UUID,
+    val type: String?,
+    val filename: String?,
+    val url: String?,
+    val createdAt: OffsetDateTime
+)
+
+fun Attachment.toVisitAttachmentSummary(): VisitAttachmentSummary =
+    VisitAttachmentSummary(
+        id = this.id!!,
+        type = this.type,
+        filename = this.filename,
+        createdAt = this.uploadedAt,
+        url = this.url,
+    )
+
 fun Visit.toResponse(): VisitResponse =
     VisitResponse(
         id = this.id!!,
