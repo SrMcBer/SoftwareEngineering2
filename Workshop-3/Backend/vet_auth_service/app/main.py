@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 import logging
 from .routes import router
 from .config import Config
+from fastapi.middleware.cors import CORSMiddleware
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -37,6 +38,14 @@ app = FastAPI(
     description="Authentication service with clean architecture",
     version="2.0.0",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include routes

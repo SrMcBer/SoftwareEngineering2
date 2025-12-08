@@ -97,6 +97,7 @@ def login(
         return LoginResponse(
             session_token=session_token,
             user=UserInfo(
+                id=user.id,
                 name=user.name,
                 email=user.email,
                 role=user.role,
@@ -147,6 +148,7 @@ def logout(
 def get_me(current_user = Depends(get_current_user)):
     """Get current user information"""
     return UserInfo(
+        id=current_user.id,
         name=current_user.name,
         email=current_user.email,
         role=current_user.role,

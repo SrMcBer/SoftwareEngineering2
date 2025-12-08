@@ -1,8 +1,14 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/vettrack_db
+    url: jdbc:postgresql://host.docker.internal:5432/vettrack_db
     username: vettrack_user
     password: vettrack_password
+    # Add explicit HikariCP settings
+    hikari:
+      maximum-pool-size: 5  # Keep it small
+      minimum-idle: 2
+      # Add a connection test query to ensure connection is valid
+      connection-test-query: SELECT 1
   jpa:
     hibernate:
       ddl-auto: none   # IMPORTANT: don't let Spring recreate your tables
@@ -12,4 +18,4 @@ spring:
     open-in-view: false
 
 server:
-  port: 8081
+  port: 8080

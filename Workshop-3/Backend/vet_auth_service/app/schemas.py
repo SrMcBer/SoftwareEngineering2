@@ -26,6 +26,7 @@ class LoginRequest(BaseModel):
 
 
 class UserInfo(BaseModel):
+    id: UUID
     name: str
     email: EmailStr
     role: str
