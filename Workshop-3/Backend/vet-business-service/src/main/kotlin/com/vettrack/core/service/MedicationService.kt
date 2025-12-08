@@ -22,37 +22,7 @@ class MedicationService(
     private val objectMapper: ObjectMapper
 ) {
 
-    fun prescribeMedication(
-        patientId: UUID,
-        name: String,
-        dosage: String?,
-        route: String?,
-        frequency: String?,
-        startDate: LocalDate?,
-        endDate: LocalDate?,
-        createdByUserId: UUID?
-    ): Medication {
-        val patient: Patient = patientService.getById(patientId)
-
-        val createdBy: User? = createdByUserId?.let { uid -> userService.getById(uid) }
-
-        val now = OffsetDateTime.now()
-        val medication = Medication(
-            patient = patient,
-            name = name,
-            dosage = dosage,
-            route = route,
-            frequency = frequency,
-            startDate = startDate,
-            endDate = endDate,
-            createdBy = createdBy,
-            createdAt = now,
-            updatedAt = now
-        )
-
-        return medicationRepository.save(medication)
-    }
-// ------------------- Prescribe (CRUD) -------------------
+    // ------------------- Prescribe (CRUD) -------------------
 
     fun prescribeMedication(
         patientId: UUID,
