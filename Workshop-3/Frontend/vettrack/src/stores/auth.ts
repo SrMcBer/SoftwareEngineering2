@@ -1,6 +1,7 @@
 // src/stores/auth.ts
 import { defineStore } from "pinia";
 import { authApi } from "../services/authApi";
+import { setCoreSessionToken } from "../services/httpClient";
 import type {
   UserInfo,
   LoginRequest,
@@ -41,6 +42,9 @@ export const useAuthStore = defineStore("auth", {
           user: UserInfo;
           sessionToken: string;
         };
+        if (parsed.sessionToken) {
+          setCoreSessionToken(parsed.sessionToken);
+        }
         this.user = parsed.user;
         this.sessionToken = parsed.sessionToken;
 
@@ -72,6 +76,7 @@ export const useAuthStore = defineStore("auth", {
       this.sessionToken = null;
       this.error = null;
       localStorage.removeItem(STORAGE_KEY);
+      setCoreSessionToken(null);
     },
 
     async login(payload: LoginRequest) {
@@ -81,6 +86,7 @@ export const useAuthStore = defineStore("auth", {
         const { session_token, user } = await authApi.login(payload);
         this.sessionToken = session_token;
         this.user = user;
+        setCoreSessionToken(session_token);
         this.persist();
         // navigate to home if you like
         await router.push("/");
@@ -132,6 +138,7 @@ export const useAuthStore = defineStore("auth", {
       } finally {
         this.clear();
         this.loading = false;
+        setCoreSessionToken(null);
         await router.push("/login");
       }
     },
@@ -144,6 +151,7 @@ export const useAuthStore = defineStore("auth", {
       this.error = null;
       try {
         await authApi.changePassword(this.sessionToken, payload);
+        await this.logout();
       } catch (err: any) {
         this.error =
           err?.response?.data?.message ||
