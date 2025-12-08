@@ -4,26 +4,19 @@ This is the authentication service for the VetTrack application. This service is
 
 ## Installation
 
-1.  Create and activate a Python virtual environment:
+This project uses [Poetry](https://python-poetry.org/) for dependency management.
 
+1.  **Install Poetry:**
+
+    Follow the instructions on the [official Poetry website](https://python-poetry.org/docs/#installation) to install it on your system.
+
+2.  **Install Dependencies:**
+
+    Navigate to the project root directory and run:
     ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate
+    poetry install
     ```
-    
-    (On Windows, use `.venv\Scripts\activate`)
-
-2.  Install the required dependencies:
-
-    For production:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-    For development and testing, install the development dependencies:
-    ```bash
-    pip install -r requirements-dev.txt
-    ```
+    This will create a virtual environment and install all the necessary dependencies.
 
 ## Testing
 
@@ -52,22 +45,20 @@ The tests require a separate PostgreSQL database. A setup script is provided to 
 
 ### Running Tests
 
-Once the test database is set up and development dependencies are installed, you can run the tests using `pytest`:
+To run the tests, use `poetry run`:
 
 ```bash
-pytest
+poetry run pytest
 ```
 
-This will run all tests, display the results, and generate a code coverage report in the `htmlcov` directory.
+This will execute the tests within the Poetry-managed virtual environment and generate a code coverage report in the `htmlcov` directory.
 
 ## Running the Application
 
-To run the application, ensure you have your Python virtual environment activated.
+To run the application, use `poetry run`:
 
-1.  Run the application with `uvicorn`:
+```bash
+poetry run uvicorn app.main:app --reload
+```
 
-    ```bash
-    uvicorn app.main:app --reload
-    ```
-
-This will start the development server with auto-reload enabled. You can access the API documentation at `http://127.0.0.1:8000/docs`.
+This will start the development server with auto-reload enabled inside the Poetry-managed virtual environment. You can access the API documentation at `http://127.0.0.1:8000/docs`.

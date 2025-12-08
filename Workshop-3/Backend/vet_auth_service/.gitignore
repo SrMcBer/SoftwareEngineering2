@@ -1,5 +1,15 @@
+# Python
 __pycache__/
-# Coverage reports
+*.pyc
+
+# Virtual Environment
+.venv/
+
+# Test
+.pytest_cache/
 .coverage
 coverage.xml
 htmlcov/
+
+# Environment
+.env
