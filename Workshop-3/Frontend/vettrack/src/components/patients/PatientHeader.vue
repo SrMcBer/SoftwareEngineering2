@@ -17,6 +17,7 @@ const emit = defineEmits<{
   newVisit: [];
   addMedication: [];
   createReminder: [];
+  editPatient: [];
 }>();
 
 const router = useRouter();
@@ -61,6 +62,9 @@ const { speciesBadgeClass, sexBadgeClass } = useFormatting();
         </Button>
         <Button variant="outline" @click="emit('createReminder')">
           🔔 Create Reminder
+        </Button>
+        <Button variant="outline" @click="emit('editPatient')">
+          ✏️ Edit Patient
         </Button>
       </div>
     </CardHeader>

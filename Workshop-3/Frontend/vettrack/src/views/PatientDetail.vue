@@ -9,6 +9,7 @@ import MedicationsTab from "../components/medication/MedicationsTab.vue";
 import RemindersTab from "../components/reminder/RemindersTab.vue";
 import MedicationCreateDialog from "../components/medication/MedicationCreateDialog.vue";
 import ReminderDialog from "../components/reminder/ReminderDialog.vue";
+import EditPatientDialog from "../components/patients/EditPatientDialog.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -31,6 +32,7 @@ const { getAgeLabel } = useFormatting();
 const activeTab = ref<"visits" | "medications" | "reminders">("visits");
 const isMedicationDialogOpen = ref(false);
 const isReminderDialogOpen = ref(false);
+const isEditDialogOpem = ref(false);
 
 // Clock for real-time updates
 let clockTimer: number | undefined;
@@ -62,6 +64,10 @@ function onAddMedication() {
 
 function onCreateReminder() {
   isReminderDialogOpen.value = true;
+}
+
+function onEditPatient() {
+  isEditDialogOpem.value = true;
 }
 
 function handleMedicationCreated(med: Medication) {
@@ -102,6 +108,7 @@ async function handleDismissReminder(rem: Reminder) {
         :patient="patientStore.patient"
         :owner="patientStore.owner"
         :age-label="ageLabel"
+        @edit-patient="onEditPatient"
         @new-visit="onNewVisit"
         @add-medication="onAddMedication"
         @create-reminder="onCreateReminder"
@@ -153,6 +160,13 @@ async function handleDismissReminder(rem: Reminder) {
       v-model:open="isMedicationDialogOpen"
       :patient-id="patientStore.patient.id"
       @created="handleMedicationCreated"
+    />
+
+    <EditPatientDialog
+      v-if="patientStore.patient"
+      v-model:open="isEditDialogOpem"
+      :patient="patientStore.patient"
+      @updated="patientStore.patient = $event"
     />
 
     <ReminderDialog
