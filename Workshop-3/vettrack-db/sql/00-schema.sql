@@ -129,7 +129,7 @@ CREATE TABLE reminder (
   patient_id       UUID NOT NULL REFERENCES patient(id) ON DELETE CASCADE,
   title            TEXT NOT NULL,
   due_at           TIMESTAMPTZ NOT NULL,
-  status           reminder_status NOT NULL DEFAULT 'pending',
+  status           VARCHAR(20) NOT NULL DEFAULT 'pending',
   created_by       UUID REFERENCES app_user(id),
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()

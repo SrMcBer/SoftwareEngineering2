@@ -38,7 +38,7 @@ class ReminderService(
             patient = patient,
             title = title,
             dueAt = dueAt,
-            status = ReminderStatus.PENDING,
+            status = ReminderStatus.pending,
             createdBy = createdBy,
             createdAt = now,
             updatedAt = now
@@ -74,7 +74,7 @@ class ReminderService(
             NoSuchElementException("Reminder $reminderId not found")
         }
 
-        if (reminder.status == ReminderStatus.DONE) return reminder
+        if (reminder.status == ReminderStatus.done) return reminder
 
         val before = reminder.shallowCopy()
         reminder.markDone()
@@ -102,7 +102,7 @@ class ReminderService(
             NoSuchElementException("Reminder $reminderId not found")
         }
 
-        if (reminder.status == ReminderStatus.DISMISSED) return reminder
+        if (reminder.status == ReminderStatus.done) return reminder
 
         val before = reminder.shallowCopy()
         reminder.markDismissed() // Requires update to Reminder entity/status enum
@@ -127,7 +127,7 @@ class ReminderService(
         reminderRepository.findByPatientId(patientId)
 
     fun listOverdue(now: OffsetDateTime = OffsetDateTime.now()): List<Reminder> =
-        reminderRepository.findByStatusAndDueAtBefore(ReminderStatus.PENDING, now)
+        reminderRepository.findByStatusAndDueAtBefore(ReminderStatus.pending, now)
 
 
     // ------------------- Helper Methods -------------------

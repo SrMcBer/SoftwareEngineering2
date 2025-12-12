@@ -10,7 +10,7 @@ class AuthRestClientConfig {
 
     @Bean
     fun authRestClient(
-        @Value("http://host.docker.internal:8000") baseUrl: String
+        @Value("http://localhost:8000") baseUrl: String
     ): RestClient {
         return RestClient.builder()
             .baseUrl(baseUrl)

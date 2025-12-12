@@ -14,7 +14,7 @@ class Reminder(
     @UuidGenerator
     var id: UUID? = null,
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "patient_id", nullable = false)
     var patient: Patient,
 
@@ -26,9 +26,9 @@ class Reminder(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    var status: ReminderStatus = ReminderStatus.PENDING,
+    var status: ReminderStatus = ReminderStatus.pending,
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "created_by")
     var createdBy: User? = null,
 
@@ -39,17 +39,17 @@ class Reminder(
     var updatedAt: OffsetDateTime = OffsetDateTime.now()
 ) {
     fun markDone() {
-        status = ReminderStatus.DONE
+        status = ReminderStatus.done
         updatedAt = OffsetDateTime.now()
     }
 
     fun markDismissed() {
-        status = ReminderStatus.DISMISSED
+        status = ReminderStatus.done
         updatedAt = OffsetDateTime.now()
     }
 
     fun isOverdue(now: OffsetDateTime = OffsetDateTime.now()): Boolean =
-        status == ReminderStatus.PENDING && dueAt.isBefore(now)
+        status == ReminderStatus.pending && dueAt.isBefore(now)
 
     fun shallowCopy(): Reminder {
         return Reminder(

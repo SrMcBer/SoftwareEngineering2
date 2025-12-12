@@ -9,6 +9,15 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 import type {
   Patient,
@@ -47,32 +56,88 @@ const now = ref(new Date());
 let clockTimer: number | undefined;
 
 const reminders = ref<Reminder[]>([]);
+const isReminderDialogOpen = ref(false);
+const isSavingReminder = ref(false);
+const newReminderTitle = ref("");
+const newReminderDueAt = ref<string>("");
 
-async function loadReminders() {
-  reminders.value = await remindersApi.getRemindersForPatient(patientId);
+async function onCreateReminder() {
+  if (!patient.value) return;
+
+  // Default due date: 1 hour from now
+  const nowLocal = new Date();
+  nowLocal.setMinutes(nowLocal.getMinutes() + 60);
+
+  // datetime-local value (YYYY-MM-DDTHH:MM)
+  newReminderDueAt.value = nowLocal.toISOString().slice(0, 16);
+  newReminderTitle.value = "";
+  isReminderDialogOpen.value = true;
 }
 
-async function onCreateReminder(input: { title: string; dueAt: string }) {
-  const created = await remindersApi.createReminder({
-    patientId: patientId,
-    title: input.title,
-    dueAt: input.dueAt,
-  });
-  reminders.value.unshift(created);
+function formatReminderDue(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleString();
 }
 
-async function onMarkDone(reminderId: string) {
-  const updated = await remindersApi.markReminderDone(reminderId);
-  reminders.value = reminders.value.map((r) =>
-    r.id === reminderId ? updated : r
-  );
+async function submitNewReminder() {
+  if (!patient.value) return;
+  if (!newReminderTitle.value.trim() || !newReminderDueAt.value) {
+    toast.error("Missing information", {
+      description: "Please add a title and a due date for the reminder.",
+    });
+    return;
+  }
+
+  try {
+    isSavingReminder.value = true;
+
+    const isoDueAt = new Date(newReminderDueAt.value).toISOString();
+
+    const created = await remindersApi.createReminder({
+      patientId: patient.value.id,
+      title: newReminderTitle.value.trim(),
+      dueAt: isoDueAt,
+    });
+
+    reminders.value = [created, ...reminders.value];
+    isReminderDialogOpen.value = false;
+
+    toast.success("Reminder created", {
+      description: "The reminder was saved successfully.",
+    });
+  } catch (err) {
+    console.error("Failed to create reminder", err);
+    toast.error("Could not create reminder", {
+      description: "Please try again in a moment.",
+    });
+  } finally {
+    isSavingReminder.value = false;
+  }
 }
 
-async function onDismiss(reminderId: string) {
-  const updated = await remindersApi.dismissReminder(reminderId);
-  reminders.value = reminders.value.map((r) =>
-    r.id === reminderId ? updated : r
-  );
+async function markReminderAsDone(rem: Reminder) {
+  try {
+    const updated = await remindersApi.markReminderDone(rem.id);
+    reminders.value = reminders.value.map((r) =>
+      r.id === updated.id ? updated : r
+    );
+  } catch (err) {
+    console.error("Failed to mark reminder as done", err);
+    toast.error("Could not mark reminder as done.");
+  }
+}
+
+async function dismissReminder(rem: Reminder) {
+  try {
+    const updated = await remindersApi.dismissReminder(rem.id);
+    reminders.value = reminders.value.map((r) =>
+      r.id === updated.id ? updated : r
+    );
+  } catch (err) {
+    console.error("Failed to dismiss reminder", err);
+    toast.error("Could not dismiss reminder.");
+  }
 }
 
 onMounted(() => {
@@ -169,6 +234,8 @@ async function loadData() {
     }
 
     doseEventsByMedId.value = doseMap;
+
+    reminders.value = await remindersApi.getRemindersForPatient(patientId);
   } finally {
     isLoading.value = false;
   }
@@ -719,8 +786,65 @@ async function submitDose(med: Medication) {
 
             <!-- Reminders tab (placeholder) -->
             <TabsContent value="reminders" class="mt-4">
-              <div class="text-sm text-muted-foreground italic py-4">
-                Reminders are in progress and will appear here soon.
+              <div
+                v-if="reminders.length === 0"
+                class="text-sm text-muted-foreground italic py-4"
+              >
+                No reminders for this patient yet.
+              </div>
+
+              <div v-else class="space-y-3">
+                <div
+                  v-for="rem in reminders"
+                  :key="rem.id"
+                  class="rounded-lg border bg-muted/50 px-4 py-3 text-sm"
+                >
+                  <div
+                    class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between"
+                  >
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium">{{ rem.title }}</span>
+                        <Badge
+                          class="text-[10px] uppercase tracking-wide"
+                          :class="{
+                            'bg-emerald-100 text-emerald-800':
+                              rem.status === 'done',
+                            'bg-amber-100 text-amber-800':
+                              rem.status === 'pending',
+                            'bg-red-100 text-red-800': rem.status === 'overdue',
+                          }"
+                        >
+                          {{ rem.status }}
+                        </Badge>
+                      </div>
+                      <div class="mt-1 text-xs text-muted-foreground">
+                        Due {{ formatReminderDue(rem.dueAt) }}
+                        <span v-if="rem.createdByName">
+                          • by {{ rem.createdByName }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        @click="markReminderAsDone(rem)"
+                        :disabled="rem.status === 'done'"
+                      >
+                        Mark done
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        @click="dismissReminder(rem)"
+                      >
+                        Dismiss
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
@@ -733,5 +857,51 @@ async function submitDose(med: Medication) {
       :patient-id="patient.id"
       @created="handleMedicationCreated"
     />
+    <Dialog v-if="patient" v-model:open="isReminderDialogOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Create reminder</DialogTitle>
+          <DialogDescription>
+            Create a reminder for {{ patient.name }}.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-4 py-2">
+          <div class="space-y-1">
+            <label class="text-xs font-medium text-muted-foreground">
+              Title
+            </label>
+            <Input
+              v-model="newReminderTitle"
+              placeholder="Recheck, vaccines, lab follow-up..."
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-xs font-medium text-muted-foreground">
+              Due date &amp; time
+            </label>
+            <input
+              v-model="newReminderDueAt"
+              type="datetime-local"
+              class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            @click="isReminderDialogOpen = false"
+            :disabled="isSavingReminder"
+          >
+            Cancel
+          </Button>
+          <Button @click="submitNewReminder" :disabled="isSavingReminder">
+            Save reminder
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </MainLayout>
 </template>

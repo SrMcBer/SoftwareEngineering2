@@ -6,10 +6,9 @@ enum class UserRole {
 }
 
 enum class ReminderStatus {
-    PENDING,
-    DONE,
-    OVERDUE,
-    DISMISSED,
+    pending,
+    done,
+    overdue,
 }
 
 enum class ExamStatus {
