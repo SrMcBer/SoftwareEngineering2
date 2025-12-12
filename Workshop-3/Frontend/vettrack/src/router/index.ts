@@ -8,6 +8,8 @@ import Login from "../views/Login.vue";
 import Register from "../views/Register.vue";
 import Index from "../views/Index.vue";
 import PatientDetail from "../views/PatientDetail.vue";
+import OwnerDetail from "@/views/OwnerDetail.vue";
+import VisitDetail from "@/views/VisitDetail.vue";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -32,6 +34,18 @@ const routes: RouteRecordRaw[] = [
     path: "/patients/:id",
     name: "PatientDetail",
     component: PatientDetail,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/owners/:id",
+    name: "OwnerDetail",
+    component: OwnerDetail,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/visits/:visitId",
+    name: "visit-details",
+    component: VisitDetail,
     meta: { requiresAuth: true },
   },
 ];
