@@ -2,12 +2,18 @@
 import { Badge } from "@/components/ui/badge";
 import type { VisitDetails } from "../../types/business";
 import { useFormatting } from "../../composables/useFormatting";
+import { useRouter } from "vue-router";
 
 defineProps<{
   visits: VisitDetails[];
 }>();
 
+const router = useRouter();
 const { formatVisitDate } = useFormatting();
+
+function goToVisit(visitId: string) {
+  router.push(`/visits/${visitId}`);
+}
 </script>
 
 <template>
@@ -22,7 +28,12 @@ const { formatVisitDate } = useFormatting();
     <div
       v-for="vd in visits"
       :key="vd.visit.id"
-      class="rounded-lg border bg-muted/50 px-4 py-3"
+      class="rounded-lg border bg-muted/50 px-4 py-3 hover:bg-muted/70 transition cursor-pointer"
+      role="button"
+      tabindex="0"
+      @click="goToVisit(vd.visit.id)"
+      @keydown.enter.prevent="goToVisit(vd.visit.id)"
+      @keydown.space.prevent="goToVisit(vd.visit.id)"
     >
       <div
         class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between"
@@ -30,12 +41,39 @@ const { formatVisitDate } = useFormatting();
         <div class="font-medium">
           {{ vd.visit.reason || "Visit" }}
         </div>
-        <Badge class="text-xs font-normal">
-          {{ formatVisitDate(vd.visit.dateTime) }}
-        </Badge>
+
+        <div class="flex items-center gap-2">
+          <Badge class="text-xs font-normal">
+            {{ formatVisitDate(vd.visit.dateTime) }}
+          </Badge>
+
+          <Button
+            variant="outline"
+            size="sm"
+            class="h-7 px-2 text-xs"
+            @click.stop="goToVisit(vd.visit.id)"
+          >
+            Open
+          </Button>
+        </div>
       </div>
 
+      <!-- NEW: Notes + vitals -->
       <div class="mt-2 space-y-2 text-sm text-muted-foreground">
+        <div v-if="vd.visit.examNotes" class="line-clamp-2">
+          <span class="font-medium text-foreground text-xs uppercase">
+            Notes:
+          </span>
+          <span class="ml-1">{{ vd.visit.examNotes }}</span>
+        </div>
+
+        <div v-if="vd.visit.vitalsJson">
+          <span class="font-medium text-foreground text-xs uppercase">
+            Vitals:
+          </span>
+          <span class="ml-1">{{ vd.visit.vitalsJson }}</span>
+        </div>
+
         <div v-if="vd.exams.length">
           <span class="font-medium text-foreground text-xs uppercase">
             Exams:

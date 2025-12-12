@@ -14,9 +14,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Medication, Reminder } from "../types/business";
-import { toast } from "vue-sonner";
 import { useMedicationHelpers } from "../composables/useMedicationHelpers";
 import { useFormatting } from "../composables/useFormatting";
+import CreateVisitDialog from "../components/visits/CreateVisitDialog.vue";
+import type { Visit } from "@/types/business";
 
 const route = useRoute();
 const router = useRouter();
@@ -33,6 +34,7 @@ const activeTab = ref<"visits" | "medications" | "reminders">("visits");
 const isMedicationDialogOpen = ref(false);
 const isReminderDialogOpen = ref(false);
 const isEditDialogOpem = ref(false);
+const createVisitOpen = ref(false);
 
 // Clock for real-time updates
 let clockTimer: number | undefined;
@@ -52,12 +54,6 @@ onBeforeUnmount(() => {
 const ageLabel = getAgeLabel(patientStore.patient);
 
 // Actions
-function onNewVisit() {
-  toast.info("New Visit", {
-    description: "Visit creation flow not implemented yet.",
-  });
-}
-
 function onAddMedication() {
   isMedicationDialogOpen.value = true;
 }
@@ -68,6 +64,10 @@ function onCreateReminder() {
 
 function onEditPatient() {
   isEditDialogOpem.value = true;
+}
+
+function onNewVisit() {
+  createVisitOpen.value = true;
 }
 
 function handleMedicationCreated(med: Medication) {
@@ -93,6 +93,10 @@ async function handleMarkReminderDone(rem: Reminder) {
 
 async function handleDismissReminder(rem: Reminder) {
   await patientStore.dismissReminder(rem.id);
+}
+
+function onVisitCreated(v: Visit) {
+  router.push(`/visits/${v.id}`);
 }
 </script>
 
@@ -167,6 +171,13 @@ async function handleDismissReminder(rem: Reminder) {
       v-model:open="isEditDialogOpem"
       :patient="patientStore.patient"
       @updated="patientStore.patient = $event"
+    />
+
+    <CreateVisitDialog
+      v-if="patientStore.patient"
+      v-model:open="createVisitOpen"
+      :patient="patientStore.patient"
+      @created="onVisitCreated"
     />
 
     <ReminderDialog
