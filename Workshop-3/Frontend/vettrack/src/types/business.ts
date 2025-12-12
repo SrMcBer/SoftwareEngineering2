@@ -3,12 +3,12 @@
 // ---------- Owners ----------
 
 export interface Owner {
-  id: string;           // uuid
+  id: string; // uuid
   name: string;
   phone?: string | null;
   email?: string | null;
-  createdAt?: string;   // date-time
-  updatedAt?: string;   // date-time
+  createdAt?: string; // date-time
+  updatedAt?: string; // date-time
 }
 
 export interface CreateOwnerRequest {
@@ -26,13 +26,13 @@ export interface UpdateOwnerRequest {
 // ---------- Patients ----------
 
 export interface Patient {
-  id: string;          // uuid
-  ownerId: string;     // uuid
+  id: string; // uuid
+  ownerId: string; // uuid
   name: string;
   species: string;
   breed?: string | null;
   sex?: string | null;
-  dob?: string | null;          // date (ISO string)
+  dob?: string | null; // date (ISO string)
   color?: string | null;
   microchipId?: string | null;
   allergies?: string | null;
@@ -47,7 +47,7 @@ export interface RegisterPatientRequest {
   species: string;
   breed?: string;
   sex?: string;
-  dob?: string;               // date
+  dob?: string; // date
   color?: string;
   microchipId?: string;
   allergies?: string;
@@ -59,7 +59,7 @@ export interface UpdatePatientRequest {
   species?: string;
   breed?: string;
   sex?: string;
-  dob?: string;              // date
+  dob?: string; // date
   color?: string;
   microchipId?: string;
   allergies?: string;
@@ -69,9 +69,9 @@ export interface UpdatePatientRequest {
 // ---------- Visits ----------
 
 export interface Visit {
-  id: string;                    // uuid
-  patientId: string;             // uuid
-  dateTime: string;              // date-time
+  id: string; // uuid
+  patientId: string; // uuid
+  dateTime: string; // date-time
   reason: string;
   vitalsJson?: string | null;
   examNotes?: string | null;
@@ -79,8 +79,8 @@ export interface Visit {
   procedures?: string | null;
   recommendations?: string | null;
   createdByUserId?: string | null; // uuid
-  createdAt: string;             // date-time
-  updatedAt: string;             // date-time
+  createdAt: string; // date-time
+  updatedAt: string; // date-time
 }
 
 export interface CreateVisitRequest {
@@ -111,41 +111,41 @@ export interface UpdateVisitRequest {
 // Summaries used in VisitDetails
 
 export interface VisitPatientSummary {
-  id: string;             // uuid
-  ownerId?: string;       // uuid
+  id: string; // uuid
+  ownerId?: string; // uuid
   name: string;
   species: string;
   breed?: string | null;
   sex?: string | null;
-  dob?: string | null;    // date
+  dob?: string | null; // date
   color?: string | null;
 }
 
 export interface VisitExamSummary {
-  id: string;                 // uuid
-  templateId: string;         // uuid
+  id: string; // uuid
+  templateId: string; // uuid
   templateName: string;
   status: string;
-  performedAt: string;        // date-time
+  performedAt: string; // date-time
   performedByUserId?: string; // uuid
   vitalsJson?: string | null;
   resultsJson?: string | null;
 }
 
 export interface VisitMedicationSummary {
-  id: string;             // uuid
+  id: string; // uuid
   name: string;
   dosage?: string | null;
   route?: string | null;
   frequency?: string | null;
-  startDate?: string | null;          // date
-  endDate?: string | null;            // date
+  startDate?: string | null; // date
+  endDate?: string | null; // date
   lastAdministeredAt?: string | null; // date-time
-  nextDueAt?: string | null;          // date-time
+  nextDueAt?: string | null; // date-time
 }
 
 export interface VisitAttachmentSummary {
-  id: string;        // uuid
+  id: string; // uuid
   type?: string;
   filename?: string;
   url?: string;
@@ -163,18 +163,18 @@ export interface VisitDetails {
 // ---------- Medications ----------
 
 export interface Medication {
-  id: string;            // uuid
-  patientId: string;     // uuid
+  id: string; // uuid
+  patientId: string; // uuid
   name: string;
   dosage?: string | null;
   route?: string | null;
   frequency?: string | null;
-  startDate?: string | null;   // date
-  endDate?: string | null;     // date
+  startDate?: string | null; // date
+  endDate?: string | null; // date
   isActive: boolean;
   createdByUserId?: string | null; // uuid
-  createdAt: string;         // date-time
-  updatedAt: string;         // date-time
+  createdAt: string; // date-time
+  updatedAt: string; // date-time
 }
 
 export interface PrescribeMedicationRequest {
@@ -183,8 +183,8 @@ export interface PrescribeMedicationRequest {
   dosage?: string;
   route?: string;
   frequency?: string;
-  startDate?: string;    // date
-  endDate?: string;      // date
+  startDate?: string; // date
+  endDate?: string; // date
 }
 
 export interface UpdateMedicationRequest {
@@ -192,12 +192,12 @@ export interface UpdateMedicationRequest {
   dosage?: string;
   route?: string;
   frequency?: string;
-  startDate?: string;    // date
-  endDate?: string;      // date
+  startDate?: string; // date
+  endDate?: string; // date
 }
 
 export interface EndMedicationRequest {
-  endDate?: string;      // date
+  endDate?: string; // date
 }
 
 export interface RecordDoseRequest {
@@ -205,10 +205,19 @@ export interface RecordDoseRequest {
   notes?: string;
 }
 
+export type DoseEventResponse = {
+  id: string;
+  medicationId: string;
+  occurredAt: string; // date-time
+  amount?: string | null;
+  notes?: string | null;
+  recordedByUserId?: string | null;
+};
+
 export interface DoseEvent {
-  id: string;            // uuid
-  medicationId: string;  // uuid
-  occurredAt: string;    // date-time
+  id: string; // uuid
+  medicationId: string; // uuid
+  occurredAt: string; // date-time
   amount?: string | null;
   notes?: string | null;
   recordedByUserId?: string | null; // uuid
@@ -217,15 +226,15 @@ export interface DoseEvent {
 // ---------- Exams & templates ----------
 
 export interface ExamTemplate {
-  id: string;           // uuid
+  id: string; // uuid
   name: string;
   description?: string | null;
   fieldsJson: string;
   isActive: boolean;
   version: number;
   createdByUserId?: string | null; // uuid
-  createdAt: string;               // date-time
-  updatedAt: string;               // date-time
+  createdAt: string; // date-time
+  updatedAt: string; // date-time
 }
 
 export interface CreateExamTemplateRequest {
@@ -238,10 +247,10 @@ export interface CreateExamTemplateRequest {
 export type ExamStatus = string; // "DRAFT" | "FINAL" etc, keep free-form for now
 
 export interface Exam {
-  id: string;            // uuid
-  patientId: string;     // uuid
-  visitId: string;       // uuid
-  templateId: string;    // uuid
+  id: string; // uuid
+  patientId: string; // uuid
+  visitId: string; // uuid
+  templateId: string; // uuid
   status: ExamStatus;
   vitalsJson?: string | null;
   resultsJson?: string | null;
@@ -257,6 +266,34 @@ export interface CreateExamFromTemplateRequest {
   vitalsJson?: string;
   resultsJson: string;
   status?: ExamStatus;
+}
+
+// --- Reminders ---
+
+export type ReminderStatus = "pending" | "done" | "overdue";
+
+export interface Reminder {
+  id: string;
+  patientId: string;
+  patientName: string;
+  title: string;
+  dueAt: string; // ISO date-time string
+  status: ReminderStatus;
+  createdByUserId?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Payload when creating/scheduling a reminder
+export interface CreateReminderPayload {
+  patientId: string;
+  title: string;
+  /**
+   * ISO date-time string (e.g. 2025-12-11T14:30:00Z)
+   * Core API expects date-time for dueAt.
+   */
+  dueAt: string;
 }
 
 // ---------- Health ----------

@@ -1,7 +1,10 @@
 // src/stores/auth.ts
 import { defineStore } from "pinia";
 import { authApi } from "../services/authApi";
-import { setCoreSessionToken } from "../services/httpClient";
+import {
+  setCoreSessionToken,
+  setUnauthorizedHandler,
+} from "../services/httpClient";
 import type {
   UserInfo,
   LoginRequest,
@@ -55,6 +58,15 @@ export const useAuthStore = defineStore("auth", {
       } catch {
         this.clear();
       }
+
+      // 🔐 Register a single global 401 handler for the whole app
+      setUnauthorizedHandler(() => {
+        if (!this.sessionToken) return;
+
+        // Clear local auth and send user to login
+        this.clear();
+        router.push("/login");
+      });
     },
 
     persist() {

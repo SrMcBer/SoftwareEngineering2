@@ -8,7 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 import type { Patient, Owner, Visit } from "../types/business";
 import { patientsApi, ownersApi, visitsApi } from "../services/businessApi";
 import { useRouter } from "vue-router";
@@ -179,6 +186,13 @@ const filteredRows = computed(() => {
   });
 });
 
+const pageSize = ref(10);
+const paginationPage = ref(1);
+const pagedRows = computed(() => {
+  const start = (paginationPage.value - 1) * pageSize.value;
+  return filteredRows.value.slice(start, start + pageSize.value);
+});
+
 // --- Callbacks from dialogs/command ---
 function handlePatientCreated(patient: Patient) {
   patients.value = [patient, ...patients.value];
@@ -277,7 +291,7 @@ function handleCommandSelect(patient: Patient) {
 
             <div v-else class="divide-y">
               <div
-                v-for="patient in filteredRows"
+                v-for="patient in pagedRows"
                 :key="patient.id"
                 class="grid grid-cols-[2fr,2fr,2.5fr,1.5fr,1fr] px-4 py-3 items-center text-sm"
                 @click="router.push(`/patients/${patient.id}`)"
@@ -354,6 +368,41 @@ function handleCommandSelect(patient: Patient) {
                   </Button>
                 </div>
               </div>
+            </div>
+
+            <div
+              v-if="filteredRows.length > 0"
+              class="flex items-center justify-between mt-4 text-xs text-muted-foreground"
+            >
+              <span class="text-xs text-muted-foreground">
+                Showing
+                {{ (paginationPage - 1) * pageSize + 1 }}
+                –
+                {{ Math.min(paginationPage * pageSize, filteredRows.length) }}
+                of {{ filteredRows.length }} patients
+              </span>
+
+              <!-- shadcn-vue pagination -->
+              <Pagination
+                v-model:page="paginationPage"
+                :total="filteredRows.length"
+                :items-per-page="pageSize"
+                class="mt-4"
+              >
+                <PaginationContent v-slot="{ items }">
+                  <PaginationPrevious />
+                  <template v-for="(item, index) in items" :key="index">
+                    <PaginationItem
+                      v-if="item.type === 'page'"
+                      :value="item.value"
+                      :is-active="item.value === paginationPage"
+                    >
+                      {{ item.value }}
+                    </PaginationItem>
+                  </template>
+                  <PaginationNext />
+                </PaginationContent>
+              </Pagination>
             </div>
           </div>
         </CardContent>
