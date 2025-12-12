@@ -213,7 +213,7 @@ class MedicationControllerTest {
 
     @Test
     fun listActiveForPatient_returnsList() {
-        every { medicationService.listActiveForPatient(patientId) } returns listOf(medicationStub())
+        every { medicationService.listMedicationsForPatient(patientId) } returns listOf(medicationStub())
 
         mockMvc.perform(get("/patients/$patientId/medications"))
             .andExpect(status().isOk)

@@ -63,6 +63,8 @@ class MedicationController(
         val startDate: LocalDate?,
         val endDate: LocalDate?,
         val isActive: Boolean,
+        val nextDueAt: java.time.OffsetDateTime?,
+        val lastAdministeredAt: java.time.OffsetDateTime?,
         val createdByUserId: UUID?,
         val createdAt: java.time.OffsetDateTime,
         val updatedAt: java.time.OffsetDateTime
@@ -178,12 +180,20 @@ class MedicationController(
 
     // --- Read ---
 
-    @Operation(summary = "List active medications for a patient")
+    @Operation(summary = "List all medications for a patient (active and inactive)")
     @GetMapping("/patients/{patientId}/medications")
-    fun listActiveForPatient(
+    fun listMedicationsForPatient(
         @PathVariable patientId: UUID
     ): List<MedicationResponse> =
-        medicationService.listActiveForPatient(patientId).map { it.toResponse() }
+        medicationService.listMedicationsForPatient(patientId).map { it.toResponse() }
+
+    @Operation(summary = "List all dose events for a medication")
+    @GetMapping("/medications/{medicationId}/doses")
+    fun listDoseEvents(
+        @PathVariable medicationId: UUID
+    ): List<DoseEventResponse> =
+        medicationService.listDoseEvents(medicationId).map { it.toResponse() }
+
 
     private fun extractIp(request: HttpServletRequest): String? {
         val forwarded = request.getHeader("X-Forwarded-For")
@@ -204,7 +214,9 @@ class MedicationController(
             isActive = this.isActive(),
             createdByUserId = this.createdBy?.id,
             createdAt = this.createdAt,
-            updatedAt = this.updatedAt
+            updatedAt = this.updatedAt,
+            nextDueAt = this.nextDueAt,
+            lastAdministeredAt = this.lastAdministeredAt
         )
 
     private fun DoseEvent.toResponse(): DoseEventResponse =

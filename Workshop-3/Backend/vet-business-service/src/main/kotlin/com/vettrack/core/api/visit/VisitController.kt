@@ -130,7 +130,7 @@ class VisitController(
 
         // 3. Active medications for this patient (current long-term meds)
         val medicationsForPatient: List<Medication> =
-            medicationService.listActiveForPatient(patient.id!!)
+            medicationService.listMedicationsForPatient(patient.id!!)
 
         // 4. Attachments for this visit (assuming such a method exists)
         val attachmentsForVisit: List<Attachment> =

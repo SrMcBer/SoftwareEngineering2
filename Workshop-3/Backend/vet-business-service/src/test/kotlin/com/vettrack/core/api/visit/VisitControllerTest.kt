@@ -176,7 +176,7 @@ class VisitControllerTest {
 
         every { visitService.getById(visitId) } returns visit
         every { examService.listForPatient(patientId) } returns listOf(exam)
-        every { medicationService.listActiveForPatient(patientId) } returns listOf(med)
+        every { medicationService.listMedicationsForPatient(patientId) } returns listOf(med)
         every { attachmentService.listForVisit(visitId) } returns listOf(attachment)
 
         mockMvc.perform(get("/visits/$visitId/details"))

@@ -10,5 +10,4 @@ interface MedicationRepository : JpaRepository<Medication, UUID> {
 
     fun findByPatientId(patientId: UUID): List<Medication>
 
-    fun findByPatientIdAndEndDateIsNull(patientId: UUID): List<Medication>
 }

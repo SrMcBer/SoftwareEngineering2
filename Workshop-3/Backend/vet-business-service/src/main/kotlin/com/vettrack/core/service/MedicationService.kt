@@ -209,8 +209,21 @@ class MedicationService(
 
     // ------------------- Read/Search -------------------
 
-    fun listActiveForPatient(patientId: UUID): List<Medication> =
-        medicationRepository.findByPatientIdAndEndDateIsNull(patientId)
+    fun listMedicationsForPatient(patientId: UUID): List<Medication> {
+        return medicationRepository.findByPatientId(patientId)
+            .sortedWith(
+                compareByDescending<Medication> { it.isActive() }
+                    .thenByDescending { it.startDate ?: LocalDate.MIN }
+            )
+    }
+
+    fun listDoseEvents(medicationId: UUID): List<DoseEvent> {
+        // Optionally verify the medication exists first
+        medicationRepository.findById(medicationId)
+            .orElseThrow { IllegalArgumentException("Medication not found: $medicationId") }
+
+        return doseEventRepository.findByMedicationIdOrderByAdministeredAtDesc(medicationId)
+    }
 
     // ------------------- Helper Methods -------------------
 
