@@ -16,12 +16,15 @@ import type {
   UpdateMedicationRequest,
   EndMedicationRequest,
   RecordDoseRequest,
+  DoseEventResponse,
   DoseEvent,
   Exam,
   ExamTemplate,
   CreateExamTemplateRequest,
   CreateExamFromTemplateRequest,
   HealthResponse,
+  Reminder,
+  CreateReminderPayload,
 } from "../types/business";
 
 // ---------- Owners ----------
@@ -196,6 +199,11 @@ export const medicationsApi = {
     );
     return data;
   },
+
+  async listDoseEvents(medicationId: string) {
+    const res = await coreHttp.get(`/medications/${medicationId}/doses`);
+    return res.data as DoseEventResponse[];
+  },
 };
 
 // ---------- Exams & templates ----------
@@ -220,6 +228,61 @@ export const examsApi = {
 
   async listForPatient(patientId: string): Promise<Exam[]> {
     const { data } = await coreHttp.get<Exam[]>(`/exams/patient/${patientId}`);
+    return data;
+  },
+};
+
+export const remindersApi = {
+  // --- Reminders ---
+
+  /**
+   * Create / schedule a new reminder for a patient.
+   * POST /reminders
+   */
+  async createReminder(payload: CreateReminderPayload): Promise<Reminder> {
+    const { data } = await coreHttp.post<Reminder>("/reminders", payload);
+    return data;
+  },
+
+  /**
+   * Get all reminders for a specific patient.
+   * GET /reminders/patient/{patientId}
+   */
+  async getRemindersForPatient(patientId: string): Promise<Reminder[]> {
+    const { data } = await coreHttp.get<Reminder[]>(
+      `/reminders/patient/${patientId}`
+    );
+    return data;
+  },
+
+  /**
+   * Mark a reminder as done.
+   * PATCH /reminders/{id}/done
+   */
+  async markReminderDone(reminderId: string): Promise<Reminder> {
+    const { data } = await coreHttp.patch<Reminder>(
+      `/reminders/${reminderId}/done`
+    );
+    return data;
+  },
+
+  /**
+   * Dismiss a reminder.
+   * PATCH /reminders/{id}/dismiss
+   */
+  async dismissReminder(reminderId: string): Promise<Reminder> {
+    const { data } = await coreHttp.patch<Reminder>(
+      `/reminders/${reminderId}/dismiss`
+    );
+    return data;
+  },
+
+  /**
+   * List all overdue reminders (optional but useful for a global view).
+   * GET /reminders/overdue
+   */
+  async listOverdueReminders(): Promise<Reminder[]> {
+    const { data } = await coreHttp.get<Reminder[]>("/reminders/overdue");
     return data;
   },
 };

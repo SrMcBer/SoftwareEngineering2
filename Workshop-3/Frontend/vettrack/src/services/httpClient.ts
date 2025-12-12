@@ -3,6 +3,12 @@ import axios, { type AxiosInstance } from "axios";
 import { toast } from "vue-sonner";
 import { normalizeHttpError } from "../lib/httpError";
 
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  unauthorizedHandler = handler;
+}
+
 function attachInterceptors(instance: AxiosInstance): AxiosInstance {
   instance.interceptors.response.use(
     (response) => response,
@@ -14,6 +20,10 @@ function attachInterceptors(instance: AxiosInstance): AxiosInstance {
         toast.error(title, {
           description,
         });
+      }
+
+      if (status === 401 && unauthorizedHandler) {
+        unauthorizedHandler();
       }
 
       return Promise.reject(error);
