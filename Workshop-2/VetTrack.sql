@@ -151,7 +151,7 @@ CREATE TABLE exam (
   performed_by       UUID REFERENCES app_user(id),
   vitals_json        JSONB,                  -- vitals captured for this exam
   results_json       JSONB NOT NULL,         -- values matching template fields
-  status             exam_status NOT NULL DEFAULT 'draft',
+  status             varchar(20) DEFAULT 'draft',
   notes              TEXT,
   created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at         TIMESTAMPTZ NOT NULL DEFAULT now()
