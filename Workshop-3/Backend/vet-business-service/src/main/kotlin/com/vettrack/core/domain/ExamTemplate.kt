@@ -1,7 +1,9 @@
 package com.vettrack.core.domain
 
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.UuidGenerator
+import org.hibernate.type.SqlTypes
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -26,6 +28,7 @@ class ExamTemplate(
 
     // This holds the template schema/fields; can later map as JSONB type
     @Column(name = "fields_json", columnDefinition = "jsonb", nullable = false)
+    @JdbcTypeCode(SqlTypes.JSON)
     var fieldsJson: String,
 
     @ManyToOne(fetch = FetchType.LAZY)

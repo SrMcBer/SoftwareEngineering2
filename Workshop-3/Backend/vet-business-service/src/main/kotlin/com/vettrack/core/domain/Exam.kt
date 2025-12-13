@@ -1,7 +1,9 @@
 package com.vettrack.core.domain
 
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.UuidGenerator
+import org.hibernate.type.SqlTypes
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -37,9 +39,11 @@ class Exam(
     var performedBy: User? = null,
 
     @Column(name = "vitals_json", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     var vitalsJson: String? = null,
 
     @Column(name = "results_json", columnDefinition = "jsonb", nullable = false)
+    @JdbcTypeCode(SqlTypes.JSON)
     var resultsJson: String,
 
     @Enumerated(EnumType.STRING)

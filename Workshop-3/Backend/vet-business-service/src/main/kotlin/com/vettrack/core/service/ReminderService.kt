@@ -102,7 +102,7 @@ class ReminderService(
             NoSuchElementException("Reminder $reminderId not found")
         }
 
-        if (reminder.status == ReminderStatus.done) return reminder
+        if (reminder.status == ReminderStatus.dismissed) return reminder
 
         val before = reminder.shallowCopy()
         reminder.markDismissed() // Requires update to Reminder entity/status enum

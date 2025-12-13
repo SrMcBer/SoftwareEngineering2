@@ -4,6 +4,8 @@ import jakarta.persistence.*
 import org.hibernate.annotations.UuidGenerator
 import java.time.OffsetDateTime
 import java.util.UUID
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 
 @Entity
 @Table(name = "visit")
@@ -25,6 +27,7 @@ class Visit(
 
     // You can later switch this to a proper JSONB mapping with a custom type
     @Column(name = "vitals_json", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     var vitalsJson: String? = null,
 
     @Column(name = "exam_notes")

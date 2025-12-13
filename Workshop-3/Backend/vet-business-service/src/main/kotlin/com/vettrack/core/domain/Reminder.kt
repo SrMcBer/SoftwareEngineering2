@@ -44,7 +44,7 @@ class Reminder(
     }
 
     fun markDismissed() {
-        status = ReminderStatus.done
+        status = ReminderStatus.dismissed
         updatedAt = OffsetDateTime.now()
     }
 
