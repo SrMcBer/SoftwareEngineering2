@@ -8,6 +8,8 @@ import com.vettrack.core.domain.User
 import com.vettrack.core.domain.Visit
 import com.vettrack.core.repository.AttachmentRepository
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
+import com.vettrack.core.storage.LocalAttachmentStorage
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -19,21 +21,20 @@ class AttachmentService(
     private val examService: ExamService,
     private val userService: UserService,
     private val auditLogService: AuditLogService,
+    private val localAttachmentStorage: LocalAttachmentStorage,
     private val objectMapper: ObjectMapper
 ) {
     // ------------------- Upload & Creation -------------------
 
     /**
-     * Consolidates attachment creation to a visit OR an exam.
-     * Enforces "visit XOR exam" link constraint.
+     * Upload attachment with multipart file
      */
-    fun uploadAttachment(
+    fun uploadAttachmentMultipart(
         patientId: UUID,
         visitId: UUID? = null,
         examId: UUID? = null,
         type: String,
-        fileKey: String, // Use a generic key/path instead of a final URL here
-        filename: String?,
+        file: MultipartFile,
         uploadedByUserId: UUID?,
         actorIp: String?
     ): Attachment {
@@ -48,40 +49,58 @@ class AttachmentService(
         val exam: Exam? = examId?.let { uid -> examService.getExamById(uid) }
         val uploadedBy: User? = uploadedByUserId?.let { uid -> userService.getById(uid) }
 
-        // 2. Pre-save Responsibilities
-        if (!isSafeAndValidType(fileKey, type)) {
-            throw IllegalArgumentException("File failed virus or type validation.")
+        // 2. Validate file
+        if (!isValidType(type, file.contentType)) {
+            throw IllegalArgumentException("Invalid file type: $type vs ${file.contentType}")
         }
-        // The final, persistent URL is managed/created here after successful S3/storage upload.
-        val permanentUrl = generatePermanentUrl(fileKey)
+        if (file.isEmpty) {
+            throw IllegalArgumentException("File cannot be empty")
+        }
 
-        // 3. Entity Creation
+        // 3. Create entity first to get ID for storage path
         val now = OffsetDateTime.now()
         val attachment = Attachment(
             patient = patient,
             visit = visit,
             exam = exam,
             type = type,
-            url = permanentUrl,
-            filename = filename,
+            url = "", // Placeholder, will be updated after storage
+            filename = file.originalFilename,
             uploadedBy = uploadedBy,
             uploadedAt = now
         )
 
         val saved = attachmentRepository.save(attachment)
 
-        // 4. Audit Logging (Only Creation is logged for this entity)
-        val diffJson = buildDiffJson(old = null, new = saved, action = "upload")
-        auditLogService.log(
-            actorUserId = uploadedByUserId,
-            entityType = "attachment",
-            entityId = saved.id!!,
-            action = "upload",
-            diffSnapshotJson = diffJson,
-            ip = actorIp
-        )
+        // 4. Store file using the generated attachment ID
+        try {
+            val storedFile = localAttachmentStorage.save(
+                patientId = patientId,
+                attachmentId = saved.id!!,
+                file = file
+            )
 
-        return saved
+            // Update with actual file key
+            saved.url = storedFile.fileKey
+            val updated = attachmentRepository.save(saved)
+
+            // 5. Audit Logging
+            val diffJson = buildDiffJson(old = null, new = updated, action = "upload")
+            auditLogService.log(
+                actorUserId = uploadedByUserId,
+                entityType = "attachment",
+                entityId = updated.id!!,
+                action = "upload",
+                diffSnapshotJson = diffJson,
+                ip = actorIp
+            )
+
+            return updated
+        } catch (e: Exception) {
+            // Rollback: delete the database record if file storage fails
+            attachmentRepository.delete(saved)
+            throw IllegalStateException("Failed to store file: ${e.message}", e)
+        }
     }
 
     // ------------------- Deletion (Manage File Lifecycle) -------------------
@@ -95,10 +114,14 @@ class AttachmentService(
             NoSuchElementException("Attachment $attachmentId not found")
         }
 
-        // RESPONSIBILITY: manage file lifecycle (Delete from cloud storage first)
-        deleteFileFromStorage(attachment.url)
+        // Delete from storage first
+        try {
+            localAttachmentStorage.delete(attachment.url)
+        } catch (e: Exception) {
+            // Log but continue - orphaned files can be cleaned up later
+            println("WARN: Failed to delete file ${attachment.url}: ${e.message}")
+        }
 
-        val patientId = attachment.patient.id!! // Capture ID before deletion
         attachmentRepository.delete(attachment)
 
         // Audit Logging for Deletion
@@ -113,19 +136,12 @@ class AttachmentService(
         )
     }
 
-    // ------------------- Download (Signed URLs) -------------------
+    // ------------------- Download -------------------
 
-    /**
-     * RESPONSIBILITY: Upload/download via signed URLs
-     * Generates a time-limited URL for secure access.
-     */
-    fun getSignedDownloadUrl(attachmentId: UUID): String {
-        val attachment = attachmentRepository.findById(attachmentId).orElseThrow {
+    fun getAttachment(attachmentId: UUID): Attachment {
+        return attachmentRepository.findById(attachmentId).orElseThrow {
             NoSuchElementException("Attachment $attachmentId not found")
         }
-        // TODO Placeholder for secure cloud storage client call
-        //
-        return generateSignedUrl(attachment.url)
     }
 
     // ------------------- Listing -------------------
@@ -139,32 +155,17 @@ class AttachmentService(
     fun listForExam(examId: UUID): List<Attachment> =
         attachmentRepository.findByExamId(examId)
 
-    // ------------------- External/Placeholder Logic -------------------
+    // ------------------- Validation -------------------
 
-    /** Placeholder for integration with external storage (S3, Azure Blob, etc.) */
-    private fun isSafeAndValidType(fileKey: String, fileType: String): Boolean {
-        // TODO
-        // 1. Check fileType against allowed list (e.g., "image/jpeg", "application/pdf")
-        // 2. Scan fileKey in storage for viruses/malware
-        return true // Assume passed
-    }
+    private fun isValidType(declaredType: String, contentType: String?): Boolean {
+        val allowedTypes = mapOf(
+            "image" to listOf("image/jpeg", "image/png", "image/gif", "image/webp"),
+            "pdf" to listOf("application/pdf","application/json"),
+            "video" to listOf("video/mp4", "video/quicktime", "video/x-msvideo")
+        )
 
-    private fun generatePermanentUrl(fileKey: String): String {
-        // TODO
-        // Converts a temporary file key into a permanent public/internal access URL
-        return "https://cloudstorage.vettrack.com/attachments/$fileKey"
-    }
-
-    private fun generateSignedUrl(permanentUrl: String): String {
-        // TODO
-        // Generates a time-limited URL for secure download
-        return permanentUrl + "?Expires=1678886400&Signature=XYZ..."
-    }
-
-    private fun deleteFileFromStorage(url: String) {
-        // TODO
-        // Sends request to cloud storage API to remove the file linked to the URL
-        println("INFO: Deleting file from cloud storage: $url")
+        val allowed = allowedTypes[declaredType] ?: return false
+        return contentType in allowed
     }
 
     // ------------------- Audit Diff Helper -------------------
@@ -177,15 +178,19 @@ class AttachmentService(
         val diff = mutableMapOf<String, Any?>()
         diff["action"] = action
 
-        // Attachment is highly immutable (only created/deleted), so full snapshot is sufficient.
         val snapshot = new ?: old ?: return null
 
         diff[if (new != null) "new" else "old"] = mapOf(
             "id" to snapshot.id,
             "patientId" to snapshot.patient.id,
-            "linkedTo" to (if (snapshot.visit != null) "visit" else "exam"),
+            "linkedTo" to when {
+                snapshot.visit != null -> "visit:${snapshot.visit?.id}"
+                snapshot.exam != null -> "exam:${snapshot.exam?.id}"
+                else -> null
+            },
             "filename" to snapshot.filename,
-            "type" to snapshot.type
+            "type" to snapshot.type,
+            "fileKey" to snapshot.url
         )
         return objectMapper.writeValueAsString(diff)
     }
