@@ -296,6 +296,27 @@ export interface CreateReminderPayload {
   dueAt: string;
 }
 
+// ---------Atachments----------
+export type Attachment = {
+  id: string;
+  patientId: string;
+  visitId?: string;
+  examId?: string;
+  type: string; // api says string (you can narrow later)
+  filename?: string;
+  uploadedBy?: string;
+  uploadedAt: string;
+  downloadUrl: string;
+};
+
+export type UploadAttachmentParams = {
+  patientId: string;
+  type: string; // e.g. "image" | "pdf" | "video" (keep string for now)
+  file: File;
+  visitId?: string;
+  examId?: string;
+};
+
 // ---------- Health ----------
 
 export interface HealthResponse {

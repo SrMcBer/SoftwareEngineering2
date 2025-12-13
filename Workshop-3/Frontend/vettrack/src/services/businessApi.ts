@@ -25,6 +25,8 @@ import type {
   HealthResponse,
   Reminder,
   CreateReminderPayload,
+  Attachment,
+  UploadAttachmentParams,
 } from "../types/business";
 
 // ---------- Owners ----------
@@ -64,6 +66,13 @@ export const ownersApi = {
 export const patientsApi = {
   async list(): Promise<Patient[]> {
     const { data } = await coreHttp.get<Patient[]>("/patients");
+    return data;
+  },
+
+  async listByOwner(ownerId: string): Promise<Patient[]> {
+    const { data } = await coreHttp.get<Patient[]>(`/patients`, {
+      params: { ownerId },
+    });
     return data;
   },
 
@@ -313,6 +322,39 @@ export const examTemplatesApi = {
       "/exam-templates/active"
     );
     return data;
+  },
+};
+
+export const attachmentsApi = {
+  async upload(params: UploadAttachmentParams): Promise<Attachment> {
+    // enforce XOR client-side too (DB enforces it as well) :contentReference[oaicite:8]{index=8}
+    if (!!params.visitId && !!params.examId) {
+      throw new Error(
+        "Attachment can be linked to a visit OR an exam, not both."
+      );
+    }
+
+    const fd = new FormData();
+    fd.append("file", params.file);
+
+    const qs = new URLSearchParams();
+    qs.set("type", params.type);
+    if (params.visitId) qs.set("visitId", params.visitId);
+    if (params.examId) qs.set("examId", params.examId);
+
+    const { data } = await coreHttp.post<Attachment>(
+      `/api/v1/patients/${params.patientId}/attachments?${qs.toString()}`,
+      {
+        method: "POST",
+        body: fd,
+        // NOTE: don't set Content-Type manually for FormData
+      }
+    );
+    return data;
+  },
+
+  async remove(attachmentId: string): Promise<void> {
+    await coreHttp.delete(`/api/v1/attachments/${attachmentId}`);
   },
 };
 

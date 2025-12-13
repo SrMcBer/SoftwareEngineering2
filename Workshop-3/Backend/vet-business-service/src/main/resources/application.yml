@@ -1,21 +1,53 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/vettrack_db
+    url: jdbc:postgresql://host.docker.internal:5432/vettrack_db
     username: vettrack_user
     password: vettrack_password
-    # Add explicit HikariCP settings
     hikari:
       maximum-pool-size: 5  # Keep it small
       minimum-idle: 2
-      # Add a connection test query to ensure connection is valid
       connection-test-query: SELECT 1
   jpa:
     hibernate:
-      ddl-auto: none   # IMPORTANT: don't let Spring recreate your tables
+      ddl-auto: none
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+vettrack:
+  storage:
+    attachments-dir: ./data/attachments
 
 server:
   port: 8080
+
+---
+# Development profile
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/vettrack_db
+  config:
+    activate:
+      on-profile: dev
+
+vettrack:
+  storage:
+    attachments-dir: ${user.home}/vettrack/attachments
+
+---
+# Production profile
+spring:
+  datasource:
+    url: jdbc:postgresql://host.docker.internal:5432/vettrack_db
+  config:
+    activate:
+      on-profile: prod
+
+vettrack:
+  storage:
+    attachments-dir: /data/attachments
